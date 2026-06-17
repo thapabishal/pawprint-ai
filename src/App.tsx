@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, NavLink } from 'react-router-dom'
+import { useEffect } from 'react'
 import { Camera, Search, Map as MapIcon, LayoutDashboard, Dog } from 'lucide-react'
 import CatchPage from './pages/CatchPage'
 import IdentifyPage from './pages/IdentifyPage'
@@ -6,8 +7,15 @@ import DogProfilePage from './pages/DogProfilePage'
 import MapPage from './pages/MapPage'
 import DashboardPage from './pages/DashboardPage'
 import { Toaster } from './components/ui/toaster'
+import { useCatchStore } from './stores/catchStore'
 
 function App() {
+  const loadSavedDraft = useCatchStore((state) => state.loadSavedDraft)
+
+  useEffect(() => {
+    loadSavedDraft()
+  }, [loadSavedDraft])
+
   return (
     <Router>
       <div className="flex flex-col min-h-[100dvh]">
