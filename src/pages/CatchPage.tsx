@@ -5,12 +5,11 @@ import { VitalsSelector } from '../components/catch/VitalsSelector';
 import { Button } from '../components/ui/button';
 
 export default function CatchPage() {
-  const { notes, setNotes } = useCatchStore();
+  const { notes, setNotes, handlerName, setHandlerName } = useCatchStore();
 
   const handleSave = () => {
     // In a real app, this would trigger the upload queue logic
     console.log('Saving catch record...');
-    // reset();
   };
 
   return (
@@ -35,6 +34,20 @@ export default function CatchPage() {
 
         <div className="px-4 py-2">
           <div className="h-px bg-gray-200 w-full" />
+        </div>
+
+        {/* Handler Name Section */}
+        <div className="px-4 space-y-3">
+          <label className="text-sm font-semibold text-gray-500 uppercase tracking-wider ml-1">
+            Handler Name
+          </label>
+          <input
+            type="text"
+            value={handlerName}
+            onChange={(e) => setHandlerName(e.target.value)}
+            placeholder="Field worker name..."
+            className="w-full h-12 rounded-xl border border-gray-200 px-4 text-base focus:ring-2 focus:ring-[#0D7377] focus:border-transparent outline-none transition-all placeholder:text-gray-400 bg-white"
+          />
         </div>
 
         {/* Vitals Section */}
