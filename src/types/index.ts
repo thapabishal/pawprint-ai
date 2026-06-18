@@ -1,5 +1,3 @@
-// src/types/index.ts
-
 export type Sex = 'male' | 'female' | 'unknown';
 export type AgeGroup = 'puppy' | 'adult' | 'senior' | 'unknown';
 export type Condition = 'healthy' | 'injured' | 'critical' | 'unknown';
@@ -7,9 +5,8 @@ export type SterilizationStatus = 'intact' | 'sterilized' | 'unknown';
 export type EarType = 'prick' | 'semi_floppy' | 'fully_floppy' | 'cropped' | 'torn_notched';
 export type CoatColor = 'red_brown' | 'black' | 'white' | 'grey' | 'brindle' | 'mixed';
 export type Marking = 'white_chest' | 'white_paws' | 'black_mask' | 'sickle_tail' | 'curled_tail';
-export type GPSStatus = "idle" | "requesting" | "success" | "failed" | "unavailable";
-
 export type EventType = 'catch' | 'vaccinate' | 'sterilize' | 'recover' | 'release' | 'observation';
+export type GPSStatus = 'idle' | 'requesting' | 'success' | 'failed' | 'unavailable';
 
 export interface VisualTags {
   ears?: EarType;
@@ -68,15 +65,15 @@ export interface DogWithStatus extends Dog {
 export interface CatchDraft {
   id: string;               // local draft ID
   photo_dataurl: string | null;
+  photo_size: number | null;
   sex: Sex;
   age_group: AgeGroup;
   condition: Condition;
   visual_tags: VisualTags;
   location: GeoPoint | null;
   location_accuracy: number | null;
-  notes: string;
   handler_name: string;
-  photo_size: number | null;
+  notes: string;
   created_at: string;       // draft started
   last_saved: string;       // last localStorage save
 }

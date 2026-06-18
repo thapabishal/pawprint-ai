@@ -21,7 +21,7 @@ function SelectorOption<T extends string>({
 }: OptionProps<T>) {
   const baseClasses = "flex-1 flex flex-col items-center justify-center gap-1 rounded-xl border transition-all duration-150 h-16 active:scale-[0.97]";
 
-  let dynamicClasses = "";
+  let dynamicClasses: string;
   if (isSelected) {
     if (isCritical) {
       dynamicClasses = "bg-[#FEE2E2] border-[#DC2626] text-[#DC2626] font-semibold shadow-sm";
