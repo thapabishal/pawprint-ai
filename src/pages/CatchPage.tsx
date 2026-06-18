@@ -3,17 +3,42 @@ import { useCatchStore } from '../stores/catchStore';
 import { useDraftSave } from '../hooks/useDraftSave';
 import { CameraCapture } from '../components/catch/CameraCapture';
 import { VitalsSelector } from '../components/catch/VitalsSelector';
+import { VisualTagsGrid } from '../components/catch/VisualTagsGrid';
 import { LocationCapture } from '../components/catch/LocationCapture';
+import { CatchSuccess } from '../components/catch/CatchSuccess';
+import { useSubmitCatch } from '../hooks/useSubmitCatch';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
+import { useNavigate } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
 
 const CatchPage: React.FC = () => {
-  const { draft, setNotes } = useCatchStore();
+  const navigate = useNavigate();
+  const { draft, setNotes, resetDraft } = useCatchStore();
   useDraftSave(draft);
 
-  const handleSave = () => {
-    // Logic for saving will be implemented later, for now just a stub
-    console.log('Saving catch:', draft);
+  const {
+    isSubmitting,
+    isOptimistic,
+    successData,
+    submitCatch,
+    clearState
+  } = useSubmitCatch();
+
+  const handleCatchAnother = () => {
+    resetDraft();
+    clearState();
+  };
+
+  const handleViewProfile = () => {
+    if (successData) {
+      navigate(`/dog/${successData.dog_id}`);
+    }
+  };
+
+  const handleCloseSuccess = () => {
+    clearState();
+    resetDraft();
   };
 
   return (
@@ -42,6 +67,10 @@ const CatchPage: React.FC = () => {
           <VitalsSelector />
         </div>
 
+        <div className="mt-4">
+          <VisualTagsGrid />
+        </div>
+
         {/* Notes Section */}
         <div className="px-4 mt-4 space-y-2">
           <div className="flex items-center gap-2 ml-1">
@@ -64,13 +93,32 @@ const CatchPage: React.FC = () => {
         <div className="h-6 bg-gradient-to-t from-white to-transparent" />
         <div className="bg-white/95 backdrop-blur-sm border-t border-[#E5E7EB] px-4 pt-3 pb-[calc(68px+env(safe-area-inset-bottom)+12px)]">
           <Button
-            onClick={handleSave}
-            className="w-full h-[56px] bg-[#0D7377] hover:bg-[#0D7377]/90 text-white text-[16px] font-bold rounded-[12px] shadow-[0_0_20px_rgba(13,115,119,0.25)] active:scale-[0.96] transition-all"
+            onClick={submitCatch}
+            disabled={isSubmitting}
+            className="w-full h-[56px] bg-[#0D7377] hover:bg-[#0D7377]/90 text-white text-[16px] font-bold rounded-[12px] shadow-[0_0_20px_rgba(13,115,119,0.25)] active:scale-[0.96] transition-all disabled:opacity-70"
           >
-            Save Catch
+            {isSubmitting ? (
+              <div className="flex items-center gap-2">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>Registering...</span>
+              </div>
+            ) : (
+              "Save Catch"
+            )}
           </Button>
         </div>
       </div>
+
+      {/* Success Overlay */}
+      {(successData || isOptimistic) && (
+        <CatchSuccess
+          dogId={successData?.dog_id || 'Pending...'}
+          hasLocation={!!draft.location}
+          onViewProfile={handleViewProfile}
+          onCatchAnother={handleCatchAnother}
+          onClose={handleCloseSuccess}
+        />
+      )}
     </div>
   );
 };
