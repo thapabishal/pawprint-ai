@@ -83,13 +83,17 @@ const MapPage: React.FC = () => {
 
   const parseLocation = (loc: unknown): [number, number] | null => {
     if (!loc) return null;
-    if (typeof loc === 'string') {
+    if (typeof loc === "string") {
       const match = loc.match(/POINT\(([^ ]+) ([^ ]+)\)/);
       if (match) return [parseFloat(match[2]), parseFloat(match[1])];
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const l = loc as any;
-    if (l.coordinates) {
+
+    interface PostGISPoint {
+      coordinates: [number, number];
+    }
+
+    const l = loc as PostGISPoint;
+    if (l && Array.isArray(l.coordinates) && l.coordinates.length === 2) {
       return [l.coordinates[1], l.coordinates[0]];
     }
     return null;
@@ -153,7 +157,7 @@ const MapPage: React.FC = () => {
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-100 border border-gray-100">
                       {dog.cover_image_url ? (
-                        <img src={dog.cover_image_url} alt="Dog" className="w-full h-full object-cover" />
+                        <img src={dog.cover_image_url} alt="Dog marker thumbnail" className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-gray-400">
                           <MapPin size={20} />

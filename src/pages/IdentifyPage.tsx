@@ -188,7 +188,7 @@ const IdentifyPage: React.FC = () => {
             {photo && (
               <div className="space-y-3">
                 <div className="w-full h-[180px] rounded-[12px] overflow-hidden border border-gray-200">
-                  <img src={photo} className="w-full h-full object-cover" alt="Captured" />
+                  <img src={photo} className="w-full h-full object-cover" alt="Photo of the dog captured for identification" />
                 </div>
 
                 <div className="flex items-center gap-2">

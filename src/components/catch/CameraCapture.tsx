@@ -40,7 +40,7 @@ export const CameraCapture: React.FC = () => {
           <>
             <img
               src={photoDataUrl}
-              alt="Captured dog"
+              alt="Freshly captured photo of the dog"
               className="w-full h-full object-cover"
             />
             {/* Success Badge */}

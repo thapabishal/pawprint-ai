@@ -105,8 +105,8 @@ const DashboardPage: React.FC = () => {
   const { data: stats } = useQuery({
     queryKey: ['dashboard_stats', range],
     queryFn: async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await supabase.rpc('get_dashboard_stats', { since: sinceISO } as any);
+
+      const { data, error } = await (supabase.rpc as unknown as (name: string, args: unknown) => Promise<{ data: DashboardStats[]; error: unknown }>)('get_dashboard_stats', ({ since: sinceISO }));
       if (error) throw error;
       return data[0] as DashboardStats;
     },
@@ -258,7 +258,7 @@ const DashboardPage: React.FC = () => {
                   <div key={event.id} className="relative flex items-start gap-4 pl-1">
                     <div className="relative z-10 w-8 h-8 rounded-full overflow-hidden border-2 border-white shadow-sm flex-none bg-gray-100">
                       {event.dogs?.cover_image_url ? (
-                        <img src={event.dogs.cover_image_url} alt="Dog" className="w-full h-full object-cover" />
+                        <img src={event.dogs.cover_image_url} alt="Dog profile thumbnail" className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-gray-400 bg-gray-50">
                           <Activity size={12} />
