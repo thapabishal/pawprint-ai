@@ -1,17 +1,17 @@
-import { createClient } from '@supabase/supabase-js'
-import type { Database } from './database.types'
+import { createClient } from '@supabase/supabase-js';
+import type { Database } from './database.types';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  // In development, we might not have these yet, so we'll use placeholders
-  // to avoid crashing during initial setup/linting
-  console.warn('Missing Supabase environment variables. Using placeholder client.')
+  // We use placeholder values if env vars are missing to allow the app to boot
+  // but we warn the user.
+  console.warn('Missing Supabase environment variables. Check your .env file.');
 }
 
 // Singleton — import this everywhere, never create a new client
 export const supabase = createClient<Database>(
-  supabaseUrl || 'https://placeholder.supabase.co',
-  supabaseAnonKey || 'placeholder'
-)
+  supabaseUrl || 'https://placeholder-project.supabase.co',
+  supabaseAnonKey || 'placeholder-key'
+);
