@@ -5,7 +5,6 @@ import { CameraCapture } from '../components/catch/CameraCapture';
 import { VitalsSelector } from '../components/catch/VitalsSelector';
 import { LocationCapture } from '../components/catch/LocationCapture';
 import { Button } from '../components/ui/button';
-import { cn } from '../lib/utils';
 import { Badge } from '../components/ui/badge';
 
 const CatchPage: React.FC = () => {
