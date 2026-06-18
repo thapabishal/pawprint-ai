@@ -2,8 +2,9 @@ import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useCatchStore } from '../stores/catchStore';
 import { useToast } from './use-toast';
-import imageCompression from 'browser-image-compression';
-import { UPLOAD_QUEUE_KEY, STORAGE_BUCKET, UPLOAD_MAX_RETRIES } from '../lib/constants';
+import { compressDogPhoto, dataURLToBlob } from '../lib/imageUtils';
+import { storageService } from '../lib/storageService';
+import { UPLOAD_QUEUE_KEY, UPLOAD_MAX_RETRIES } from '../lib/constants';
 import type { CatchDraft } from '../types';
 
 export interface SubmitState {
@@ -16,6 +17,11 @@ export interface SubmitState {
 interface QueuedCatch extends CatchDraft {
   queued_at: string;
   retries: number;
+}
+
+interface CreateCatchResponse {
+  dog_id: string;
+  event_id: string;
 }
 
 export const useSubmitCatch = () => {
@@ -37,17 +43,6 @@ export const useSubmitCatch = () => {
     });
   }, []);
 
-  const compressImage = async (dataUrl: string) => {
-    const response = await fetch(dataUrl);
-    const blob = await response.blob();
-    const options = {
-      maxSizeMB: 0.8,
-      maxWidthOrHeight: 1920,
-      useWebWorker: true,
-    };
-    return await imageCompression(blob as File, options);
-  };
-
   const uploadToQueue = useCallback((draftToQueue: CatchDraft) => {
     try {
       const queue: QueuedCatch[] = JSON.parse(localStorage.getItem(UPLOAD_QUEUE_KEY) || '[]');
@@ -63,7 +58,10 @@ export const useSubmitCatch = () => {
   }, []);
 
   const processQueue = useCallback(async () => {
-    const queue: QueuedCatch[] = JSON.parse(localStorage.getItem(UPLOAD_QUEUE_KEY) || '[]');
+    const queueString = localStorage.getItem(UPLOAD_QUEUE_KEY);
+    if (!queueString) return;
+
+    const queue: QueuedCatch[] = JSON.parse(queueString);
     if (queue.length === 0) return;
 
     const remainingQueue: QueuedCatch[] = [];
@@ -78,15 +76,16 @@ export const useSubmitCatch = () => {
       try {
         if (!item.photo_dataurl) throw new Error('No photo in queued item');
 
-        const compressedBlob = await compressImage(item.photo_dataurl);
+        const photoBlob = await dataURLToBlob(item.photo_dataurl);
+        const compressedFile = await compressDogPhoto(photoBlob);
 
-        // @ts-ignore
-        const { data, error: rpcError } = await (supabase.rpc as any)('create_catch_event', {
+        // RPC call to create dog and event record
+        const { data, error: rpcError } = await (supabase.rpc as unknown as (name: string, args: unknown) => Promise<{ data: CreateCatchResponse[] | null, error: { message: string } | null }>)('create_catch_event', {
           p_sex: item.sex,
           p_age_group: item.age_group,
           p_condition: item.condition,
           p_sterilization_status: 'unknown',
-          p_visual_tags: item.visual_tags as any,
+          p_visual_tags: item.visual_tags,
           p_lat: item.location?.lat ?? null,
           p_lng: item.location?.lng ?? null,
           p_location_accuracy: item.location_accuracy ?? null,
@@ -94,29 +93,13 @@ export const useSubmitCatch = () => {
           p_notes: item.notes
         });
 
-        if (rpcError) throw rpcError;
-        if (!data || !data[0]) throw new Error('No data returned from RPC');
+        if (rpcError) throw new Error(rpcError.message);
+        if (!data || !data[0]) throw new Error('No data returned from create_catch_event');
 
-        const { dog_id, event_id } = data[0] as { dog_id: string, event_id: string };
-        const filePath = `${dog_id}/${event_id}_${Date.now()}.jpg`;
+        const { dog_id, event_id } = data[0];
 
-        const { error: uploadError } = await supabase.storage
-          .from(STORAGE_BUCKET)
-          .upload(filePath, compressedBlob, {
-            contentType: 'image/jpeg',
-            cacheControl: '3600',
-            upsert: false
-          });
-
-        if (uploadError) throw uploadError;
-
-        const { data: { publicUrl } } = supabase.storage
-          .from(STORAGE_BUCKET)
-          .getPublicUrl(filePath);
-
-        // @ts-ignore
-        await (supabase.from('dogs').update as any)({ cover_image_url: publicUrl })
-          .eq('id', dog_id);
+        // Handle storage and database metadata updates
+        await storageService.uploadDogCover(dog_id, event_id, compressedFile);
 
         successCount++;
       } catch (err) {
@@ -163,15 +146,16 @@ export const useSubmitCatch = () => {
     setState(s => ({ ...s, isSubmitting: true, error: null }));
 
     try {
-      const compressedBlob = await compressImage(draft.photo_dataurl);
+      const photoBlob = await dataURLToBlob(draft.photo_dataurl);
+      const compressedFile = await compressDogPhoto(photoBlob);
 
-      // @ts-ignore
-      const { data, error: rpcError } = await (supabase.rpc as any)('create_catch_event', {
+      // 1. Create records in DB
+      const { data, error: rpcError } = await (supabase.rpc as unknown as (name: string, args: unknown) => Promise<{ data: CreateCatchResponse[] | null, error: { message: string } | null }>)('create_catch_event', {
         p_sex: draft.sex,
         p_age_group: draft.age_group,
         p_condition: draft.condition,
         p_sterilization_status: 'unknown',
-        p_visual_tags: draft.visual_tags as any,
+        p_visual_tags: draft.visual_tags,
         p_lat: draft.location?.lat ?? null,
         p_lng: draft.location?.lng ?? null,
         p_location_accuracy: draft.location_accuracy ?? null,
@@ -179,31 +163,13 @@ export const useSubmitCatch = () => {
         p_notes: draft.notes
       });
 
-      if (rpcError) throw rpcError;
+      if (rpcError) throw new Error(rpcError.message);
       if (!data || !data[0]) throw new Error('No data returned from create_catch_event');
 
-      const { dog_id, event_id } = data[0] as { dog_id: string, event_id: string };
-      const filePath = `${dog_id}/${event_id}_${Date.now()}.jpg`;
+      const { dog_id, event_id } = data[0];
 
-      const { error: uploadError } = await supabase.storage
-        .from(STORAGE_BUCKET)
-        .upload(filePath, compressedBlob, {
-          contentType: 'image/jpeg',
-          cacheControl: '3600',
-          upsert: false
-        });
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from(STORAGE_BUCKET)
-        .getPublicUrl(filePath);
-
-      // @ts-ignore
-      const { error: updateError } = await (supabase.from('dogs').update as any)({ cover_image_url: publicUrl })
-        .eq('id', dog_id);
-
-      if (updateError) throw updateError;
+      // 2. Upload photo and update metadata
+      await storageService.uploadDogCover(dog_id, event_id, compressedFile);
 
       setState({
         isSubmitting: false,
@@ -217,10 +183,11 @@ export const useSubmitCatch = () => {
         description: "Catch recorded successfully.",
       });
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Submission error:', err);
+      const error = err as Error;
 
-      const isNetworkError = err.message === 'Failed to fetch' || !navigator.onLine;
+      const isNetworkError = error.message === 'Failed to fetch' || !navigator.onLine;
 
       if (isNetworkError) {
         uploadToQueue(draft);
@@ -238,12 +205,12 @@ export const useSubmitCatch = () => {
         setState({
           isSubmitting: false,
           isOptimistic: false,
-          error: err.message,
+          error: error.message,
           successData: null
         });
         toast({
           title: "Submission failed",
-          description: err.message,
+          description: error.message,
           variant: "destructive"
         });
       }

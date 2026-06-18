@@ -1,6 +1,8 @@
 export const GPS_SEARCH_RADIUS_KM = 2;
 export const GPS_SEARCH_RADIUS_EXPANDED_KM = 5;
-export const IMAGE_MAX_SIZE_KB = 800;
+
+export const IMAGE_MAX_SIZE_KB = 300;
+
 export const STORAGE_BUCKET = 'dog-images';
 export const DRAFT_KEY = 'pawprint_catch_draft';
 export const UPLOAD_QUEUE_KEY = 'pawprint_upload_queue';
