@@ -18,7 +18,7 @@ interface QueuedCatch extends CatchDraft {
   retries: number;
 }
 
-interface RPCResponse {
+interface CreateCatchResponse {
   dog_id: string;
   event_id: string;
 }
@@ -85,7 +85,7 @@ export const useSubmitCatch = () => {
 
         const compressedBlob = await compressImage(item.photo_dataurl);
 
-        const { data, error: rpcError } = await (supabase.rpc as unknown as (name: string, args: unknown) => Promise<{ data: RPCResponse[] | null, error: Error | null }>)('create_catch_event', {
+        const { data, error: rpcError } = await (supabase.rpc as unknown as (name: string, args: unknown) => Promise<{ data: CreateCatchResponse[] | null, error: Error | null }>)('create_catch_event', {
           p_sex: item.sex,
           p_age_group: item.age_group,
           p_condition: item.condition,
@@ -169,7 +169,7 @@ export const useSubmitCatch = () => {
     try {
       const compressedBlob = await compressImage(draft.photo_dataurl);
 
-      const { data, error: rpcError } = await (supabase.rpc as unknown as (name: string, args: unknown) => Promise<{ data: RPCResponse[] | null, error: Error | null }>)('create_catch_event', {
+      const { data, error: rpcError } = await (supabase.rpc as unknown as (name: string, args: unknown) => Promise<{ data: CreateCatchResponse[] | null, error: Error | null }>)('create_catch_event', {
         p_sex: draft.sex,
         p_age_group: draft.age_group,
         p_condition: draft.condition,

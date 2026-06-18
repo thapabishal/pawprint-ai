@@ -24,9 +24,7 @@ export const CatchSuccess: React.FC<CatchSuccessProps> = ({
 
   useEffect(() => {
     // Entrance animation
-    const visibilityTimer = setTimeout(() => {
-      setIsVisible(true);
-    }, 50);
+    const visibilityTimer = setTimeout(() => setIsVisible(true), 0);
 
     // Start drawing checkmark after 200ms
     const drawTimer = setTimeout(() => {
@@ -58,7 +56,7 @@ export const CatchSuccess: React.FC<CatchSuccessProps> = ({
         <X className="w-5 h-5 text-[#374151]" />
       </button>
 
-      <div className="flex flex-col items-center text-center px-6 max-w-sm">
+      <div className="flex flex-col items-center text-center px-6 max-sm">
         {/* Animated Checkmark SVG */}
         <div className="relative w-[120px] h-[120px] mb-8 flex items-center justify-center">
           <div className={cn(
