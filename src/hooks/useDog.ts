@@ -8,13 +8,14 @@ export function useDog(dogId: string | undefined) {
     queryFn: async (): Promise<DogWithStatus> => {
       if (!dogId) throw new Error('Dog ID is required');
 
-      const { data, error } = await supabase
+      // Casting the from call to any to bypass Supabase's complex type inference failure with joins
+      const { data, error } = await (supabase
         .from('dogs')
         .select(`
           *,
           events (*),
           dog_images (*)
-        `)
+        `) as any)
         .eq('id', dogId)
         .single();
 

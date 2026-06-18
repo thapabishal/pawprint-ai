@@ -9,7 +9,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import type { EventType } from '@/types';
 
-const FILTER_OPTIONS: { label: string; value: EventType | 'all' }[] = [
+type FilterType = EventType | 'all' | 'critical';
+
+const FILTER_OPTIONS: { label: string; value: FilterType }[] = [
   { label: 'All', value: 'all' },
   { label: 'In Clinic', value: 'catch' }, // Simplified: caught dogs usually in clinic
   { label: 'Released', value: 'release' },
@@ -19,7 +21,7 @@ const FILTER_OPTIONS: { label: string; value: EventType | 'all' }[] = [
 const DogsPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeFilter, setActiveFilter] = useState<EventType | 'all'>('all');
+  const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [page, setPage] = useState(0);
 
   const { data, isLoading, isFetching, error } = useDogs(page);
@@ -29,7 +31,7 @@ const DogsPage: React.FC = () => {
     return data.data.reduce(
       (acc, dog) => {
         acc.all++;
-        if (dog.current_status === 'catch' || dog.current_status === 'vaccinate' || dog.current_status === 'sterilize' || dog.current_status === 'recover') {
+        if (['catch', 'vaccinate', 'sterilize', 'recover'].includes(dog.current_status)) {
           acc.catch++;
         } else if (dog.current_status === 'release') {
           acc.release++;
@@ -49,7 +51,7 @@ const DogsPage: React.FC = () => {
         (dog.last_notes?.toLowerCase().includes(searchQuery.toLowerCase()) || '');
 
       if (activeFilter === 'all') return matchesSearch;
-      if (activeFilter === 'critical') return matchesSearch && dog.condition === 'critical';
+      if (activeFilter === 'critical') return matchesSearch && (dog.condition as string) === 'critical';
       if (activeFilter === 'catch') {
           return matchesSearch && ['catch', 'vaccinate', 'sterilize', 'recover'].includes(dog.current_status);
       }

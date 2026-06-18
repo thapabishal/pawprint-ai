@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   ChevronLeft,
   MapPin,
-  Calendar,
   User,
   Edit2,
   ArrowRight,
@@ -20,7 +19,7 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import type { EventType, DogEvent } from '@/types';
+import type { DogEvent } from '@/types';
 
 const DogProfilePage: React.FC = () => {
   const { id } = useParams();
@@ -144,11 +143,10 @@ const DogProfilePage: React.FC = () => {
             {/* Timeline Line */}
             <div className="absolute left-[7px] top-2 bottom-2 w-0.5 bg-gradient-to-b from-primary to-gray-200" />
 
-            {dog.events.map((event, index) => (
+            {dog.events.map((event) => (
               <TimelineEvent
                 key={event.id}
                 event={event}
-                isLast={index === dog.events.length - 1}
                 isExpanded={isExpanded[event.id]}
                 onToggle={() => toggleNotes(event.id)}
               />
@@ -193,7 +191,7 @@ const TraitRow = ({ label, value, swatch }: any) => (
   </div>
 );
 
-const TimelineEvent = ({ event, isLast, isExpanded, onToggle }: { event: DogEvent, isLast: boolean, isExpanded: boolean, onToggle: () => void }) => {
+const TimelineEvent = ({ event, isExpanded, onToggle }: { event: DogEvent, isExpanded: boolean, onToggle: () => void }) => {
   const config = {
     catch: { icon: Activity, color: '#F59E0B', label: 'Caught' },
     vaccinate: { icon: Syringe, color: '#06B6D4', label: 'Vaccinated' },
