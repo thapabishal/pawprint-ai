@@ -1,43 +1,57 @@
 import React from 'react';
-import { MapPin, AlertTriangle, Loader2 } from 'lucide-react';
-import { useCatchStore } from '../../stores/catchStore';
+import { MapPin, CheckCircle, AlertCircle, AlertTriangle, XCircle } from 'lucide-react';
+import { useGPS } from '../../hooks/useGPS';
+import { cn } from '../../lib/utils';
 
 export const LocationCapture: React.FC = () => {
-  const { gpsStatus, draft } = useCatchStore();
-  const { location_accuracy: locationAccuracy } = draft;
+  const { status, accuracy } = useGPS();
 
   const getStatusConfig = () => {
-    switch (gpsStatus) {
+    switch (status) {
       case 'requesting':
         return {
-          color: 'bg-amber-100 text-amber-700',
-          icon: <Loader2 size={16} className="animate-spin" />,
-          label: 'Requesting GPS...',
+          bg: 'bg-[#F3F4F6]',
+          text: 'text-[#9CA3AF]',
+          icon: <MapPin size={16} className="animate-spin" />,
+          label: 'Requesting...',
         };
       case 'success':
-        return {
-          color: 'bg-green-100 text-green-700',
-          icon: <MapPin size={16} />,
-          label: `Good GPS (${locationAccuracy?.toFixed(1)}m)`,
-        };
+        if (accuracy !== null && accuracy <= 20) {
+          return {
+            bg: 'bg-[#D1FAE5]',
+            text: 'text-[#065F46]',
+            icon: <CheckCircle size={16} />,
+            label: `±${Math.round(accuracy)}m`,
+          };
+        } else if (accuracy !== null && accuracy <= 50) {
+          return {
+            bg: 'bg-[#FEF3C7]',
+            text: 'text-[#92400E]',
+            icon: <AlertCircle size={16} />,
+            label: `±${Math.round(accuracy)}m`,
+          };
+        } else {
+          return {
+            bg: 'bg-[#FEF3C7]',
+            text: 'text-[#92400E]',
+            icon: <AlertTriangle size={16} />,
+            label: accuracy !== null ? `±${Math.round(accuracy)}m` : 'Poor GPS',
+          };
+        }
+      case 'failed':
       case 'unavailable':
         return {
-          color: 'bg-amber-100 text-amber-700',
-          icon: <AlertTriangle size={16} />,
-          label: 'GPS Unavailable',
+          bg: 'bg-[#FEE2E2]',
+          text: 'text-[#991B1B]',
+          icon: <XCircle size={16} />,
+          label: 'Failed',
         };
-      case 'failed':
-        return {
-          color: 'bg-amber-100 text-amber-700',
-          icon: <AlertTriangle size={16} />,
-          label: 'GPS Failed',
-        };
-      case 'idle':
       default:
         return {
-          color: 'bg-gray-100 text-gray-700',
+          bg: 'bg-[#F3F4F6]',
+          text: 'text-[#9CA3AF]',
           icon: <MapPin size={16} />,
-          label: 'GPS Idle',
+          label: 'Idle',
         };
     }
   };
@@ -45,14 +59,20 @@ export const LocationCapture: React.FC = () => {
   const config = getStatusConfig();
 
   return (
-    <div className="flex flex-col items-center w-full space-y-2 py-2">
-      <div className={`flex items-center px-4 py-1.5 rounded-full space-x-2 h-8 ${config.color} border border-transparent ${gpsStatus === 'requesting' ? 'animate-pulse' : ''}`}>
-        {config.icon}
-        <span className="text-sm font-medium">{config.label}</span>
+    <div className="flex flex-col items-center w-full py-2">
+      <div
+        className={cn(
+          'inline-flex items-center px-3 h-8 rounded-full gap-1.5 transition-colors duration-300',
+          config.bg,
+          config.text
+        )}
+      >
+        <span className="flex-shrink-0">{config.icon}</span>
+        <span className="text-[12px] font-semibold leading-none">{config.label}</span>
       </div>
-      {(gpsStatus === 'failed' || gpsStatus === 'unavailable') && (
-        <p className="text-xs text-amber-600 font-medium text-center">
-          This is OK — you can add location notes below
+      {(status === 'failed' || status === 'unavailable') && (
+        <p className="mt-1 text-[11px] text-[#6B7280] font-medium leading-none">
+          Location unavailable — add notes below
         </p>
       )}
     </div>
