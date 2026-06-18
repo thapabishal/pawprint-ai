@@ -86,3 +86,24 @@ export interface MatchResult {
   tag_overlap_score: number;        // 0-1: how many visual tags match
   composite_score: number;          // weighted combination
 }
+
+export interface DogCurrentStatus {
+  dog_id: string;
+  current_status: EventType;
+  last_event_at: string;
+  last_event_location: GeoPoint | null;
+  last_notes: string | null;
+  last_handler: string | null;
+  sex: Sex;
+  age_group: AgeGroup;
+  condition: Condition;
+  sterilization_status: SterilizationStatus;
+  visual_tags: VisualTags;
+  cover_image_url: string | null;
+  registered_at: string;
+  catch_location: GeoPoint | null;
+  catch_location_accuracy: number | null;
+  catch_timestamp: string;
+  catch_handler: string | null;
+  catch_notes: string | null;
+}
