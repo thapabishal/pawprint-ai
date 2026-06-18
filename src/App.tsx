@@ -14,6 +14,7 @@ const IdentifyPage = lazy(() => import('@/pages/IdentifyPage'));
 const MapPage = lazy(() => import('@/pages/MapPage'));
 const DashboardPage = lazy(() => import('@/pages/DashboardPage'));
 const DogProfilePage = lazy(() => import('@/pages/DogProfilePage'));
+const DogsPage = lazy(() => import('@/pages/DogsPage'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,6 +41,7 @@ const App: React.FC = () => {
                   <Route path="/catch" element={<CatchPage />} />
                   <Route path="/identify" element={<IdentifyPage />} />
                   <Route path="/map" element={<MapPage />} />
+                  <Route path="/dogs" element={<DogsPage />} />
                   <Route path="/dog/:id" element={<DogProfilePage />} />
                 </Routes>
               </Suspense>
@@ -86,7 +88,7 @@ const App: React.FC = () => {
                 </NavLink>
 
                 <NavLink
-                  to="/dog/recent"
+                  to="/dogs"
                   className={({ isActive }) =>
                     `relative flex h-full w-full flex-col items-center justify-center gap-1 transition-colors ${
                       isActive ? 'text-primary' : 'text-muted'
