@@ -114,7 +114,59 @@ export interface Database {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      find_nearby_catches: {
+        Args: {
+          lat: number
+          lng: number
+          radius_metres?: number
+        }
+        Returns: {
+          dog_id: string
+          event_id: string
+          catch_timestamp: string
+          handler_name: string
+          notes: string
+          distance_metres: number
+          location_accuracy: number
+          sex: string
+          age_group: string
+          condition: string
+          sterilization_status: string
+          visual_tags: Json
+          cover_image_url: string | null
+          current_status: string
+        }[]
+      }
+      log_release: {
+        Args: {
+          p_dog_id: string
+          p_lat?: number
+          p_lng?: number
+          p_location_accuracy?: number
+          p_handler_name?: string
+          p_notes?: string
+          p_confirmed_match?: boolean
+        }
+        Returns: string
+      }
+      create_catch_event: {
+        Args: {
+          p_sex?: string
+          p_age_group?: string
+          p_condition?: string
+          p_sterilization_status?: string
+          p_visual_tags?: Json
+          p_lat?: number
+          p_lng?: number
+          p_location_accuracy?: number
+          p_handler_name?: string
+          p_notes?: string
+        }
+        Returns: {
+          dog_id: string
+          event_id: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
