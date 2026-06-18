@@ -48,7 +48,8 @@ function SelectorOption<T extends string>({
 }
 
 export const VitalsSelector: React.FC = () => {
-  const { sex, ageGroup, condition, setSex, setAgeGroup, setCondition } = useCatchStore();
+  const { draft, setSex, setAgeGroup, setCondition } = useCatchStore();
+  const { sex, age_group: ageGroup, condition } = draft;
 
   const sexOptions: { label: string; emoji: string; value: Sex }[] = [
     { label: 'Male', emoji: '♂️', value: 'male' },

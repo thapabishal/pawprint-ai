@@ -3,7 +3,8 @@ import { MapPin, AlertTriangle, Loader2 } from 'lucide-react';
 import { useCatchStore } from '../../stores/catchStore';
 
 export const LocationCapture: React.FC = () => {
-  const { gpsStatus, locationAccuracy } = useCatchStore();
+  const { gpsStatus, draft } = useCatchStore();
+  const { location_accuracy: locationAccuracy } = draft;
 
   const getStatusConfig = () => {
     switch (gpsStatus) {
@@ -13,17 +14,17 @@ export const LocationCapture: React.FC = () => {
           icon: <Loader2 size={16} className="animate-spin" />,
           label: 'Requesting GPS...',
         };
-      case 'good':
+      case 'success':
         return {
           color: 'bg-green-100 text-green-700',
           icon: <MapPin size={16} />,
-          label: `Good GPS (${locationAccuracy}m)`,
+          label: `Good GPS (${locationAccuracy?.toFixed(1)}m)`,
         };
-      case 'moderate':
+      case 'unavailable':
         return {
           color: 'bg-amber-100 text-amber-700',
-          icon: <MapPin size={16} />,
-          label: `Moderate GPS (${locationAccuracy}m)`,
+          icon: <AlertTriangle size={16} />,
+          label: 'GPS Unavailable',
         };
       case 'failed':
         return {
@@ -49,7 +50,7 @@ export const LocationCapture: React.FC = () => {
         {config.icon}
         <span className="text-sm font-medium">{config.label}</span>
       </div>
-      {gpsStatus === 'failed' && (
+      {(gpsStatus === 'failed' || gpsStatus === 'unavailable') && (
         <p className="text-xs text-amber-600 font-medium text-center">
           This is OK — you can add location notes below
         </p>
