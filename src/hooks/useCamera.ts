@@ -1,8 +1,10 @@
 import { useCallback, useRef, useState } from 'react';
-import imageCompression from 'browser-image-compression';
 import { useCatchStore } from '../stores/catchStore';
-import { IMAGE_MAX_SIZE_KB } from '../lib/constants';
+import { compressDogPhoto } from '../lib/imageUtils';
 
+/**
+ * Hook for handling camera photo capture with on-device compression.
+ */
 export const useCamera = () => {
   const setPhoto = useCatchStore((state) => state.setPhoto);
   const photoDataUrl = useCatchStore((state) => state.draft.photo_dataurl);
@@ -17,16 +19,10 @@ export const useCamera = () => {
     setIsCapturing(true);
     setError(null);
 
-    const options = {
-      maxSizeMB: IMAGE_MAX_SIZE_KB / 1024,
-      maxWidthOrHeight: 1920,
-      useWebWorker: true,
-      fileType: 'image/jpeg' as const,
-      initialQuality: 0.85,
-    };
-
     try {
-      const compressedFile = await imageCompression(file, options);
+      // Use the project's standard compression settings
+      const compressedFile = await compressDogPhoto(file);
+
       const reader = new FileReader();
       reader.onloadend = () => {
         const base64data = reader.result as string;

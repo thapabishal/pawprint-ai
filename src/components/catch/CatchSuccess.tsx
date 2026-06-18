@@ -24,7 +24,7 @@ export const CatchSuccess: React.FC<CatchSuccessProps> = ({
 
   useEffect(() => {
     // Entrance animation
-    setIsVisible(true);
+    setTimeout(() => setIsVisible(true), 0);
 
     // Start drawing checkmark after 200ms
     const drawTimer = setTimeout(() => {
