@@ -3,6 +3,10 @@ import { BrowserRouter as Router, Routes, Route, NavLink } from 'react-router-do
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Camera, Search, Map as MapIcon, LayoutDashboard, Dog } from 'lucide-react';
 import { Toaster } from '@/components/ui/toaster';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { NetworkStatus } from '@/components/NetworkStatus';
+import { InstallPrompt } from '@/components/InstallPrompt';
+import { DashboardSkeleton } from '@/components/Skeletons';
 
 // Lazy load pages
 const CatchPage = lazy(() => import('@/pages/CatchPage'));
@@ -20,131 +24,130 @@ const queryClient = new QueryClient({
   },
 });
 
-const LoadingScreen = () => (
-  <div className="flex h-screen w-full items-center justify-center bg-surface">
-    <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-  </div>
-);
-
 const App: React.FC = () => {
   return (
-    <QueryClientProvider client={queryClient}>
-      <Router>
-        <div className="flex min-h-[100dvh] flex-col bg-surface overflow-hidden">
-          <main className="flex-1 overflow-y-auto pb-[calc(68px+env(safe-area-inset-bottom))]">
-            <Suspense fallback={<LoadingScreen />}>
-              <Routes>
-                <Route path="/" element={<DashboardPage />} />
-                <Route path="/catch" element={<CatchPage />} />
-                <Route path="/identify" element={<IdentifyPage />} />
-                <Route path="/map" element={<MapPage />} />
-                <Route path="/dog/:id" element={<DogProfilePage />} />
-              </Routes>
-            </Suspense>
-          </main>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <Router>
+          <div className="flex min-h-[100dvh] flex-col bg-surface overflow-hidden">
+            <NetworkStatus />
+            <InstallPrompt />
 
-          <nav className="fixed bottom-0 left-0 right-0 z-50 h-[68px] backdrop-blur-nav border-t border-border px-4 pb-safe">
-            <div className="flex h-full items-center justify-around">
-              <NavLink
-                to="/catch"
-                className={({ isActive }) =>
-                  `relative flex h-full w-full flex-col items-center justify-center gap-1 transition-colors ${
-                    isActive ? 'text-primary' : 'text-muted'
-                  }`
-                }
-              >
-                {({ isActive }) => (
-                  <>
-                    <Camera size={24} strokeWidth={isActive ? 2.5 : 2} />
-                    <span className="text-[10px] font-semibold uppercase tracking-wider">Catch</span>
-                    {isActive && (
-                      <div className="absolute bottom-1 h-1.5 w-1.5 rounded-full bg-primary" />
-                    )}
-                  </>
-                )}
-              </NavLink>
+            <main className="flex-1 overflow-y-auto pb-[calc(68px+env(safe-area-inset-bottom))]">
+              <Suspense fallback={<DashboardSkeleton />}>
+                <Routes>
+                  <Route path="/" element={<DashboardPage />} />
+                  <Route path="/catch" element={<CatchPage />} />
+                  <Route path="/identify" element={<IdentifyPage />} />
+                  <Route path="/map" element={<MapPage />} />
+                  <Route path="/dog/:id" element={<DogProfilePage />} />
+                </Routes>
+              </Suspense>
+            </main>
 
-              <NavLink
-                to="/identify"
-                className={({ isActive }) =>
-                  `relative flex h-full w-full flex-col items-center justify-center gap-1 transition-colors ${
-                    isActive ? 'text-primary' : 'text-muted'
-                  }`
-                }
-              >
-                {({ isActive }) => (
-                  <>
-                    <Search size={24} strokeWidth={isActive ? 2.5 : 2} />
-                    <span className="text-[10px] font-semibold uppercase tracking-wider">Identify</span>
-                    {isActive && (
-                      <div className="absolute bottom-1 h-1.5 w-1.5 rounded-full bg-primary" />
-                    )}
-                  </>
-                )}
-              </NavLink>
+            <nav className="fixed bottom-0 left-0 right-0 z-50 h-[68px] backdrop-blur-nav border-t border-border px-4 pb-safe">
+              <div className="flex h-full items-center justify-around">
+                <NavLink
+                  to="/catch"
+                  className={({ isActive }) =>
+                    `relative flex h-full w-full flex-col items-center justify-center gap-1 transition-colors ${
+                      isActive ? 'text-primary' : 'text-muted'
+                    }`
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      <Camera size={24} strokeWidth={isActive ? 2.5 : 2} />
+                      <span className="text-[10px] font-semibold uppercase tracking-wider">Catch</span>
+                      {isActive && (
+                        <div className="absolute bottom-1 h-1.5 w-1.5 rounded-full bg-primary" />
+                      )}
+                    </>
+                  )}
+                </NavLink>
 
-              <NavLink
-                to="/dog/recent"
-                className={({ isActive }) =>
-                  `relative flex h-full w-full flex-col items-center justify-center gap-1 transition-colors ${
-                    isActive ? 'text-primary' : 'text-muted'
-                  }`
-                }
-              >
-                {({ isActive }) => (
-                  <>
-                    <Dog size={24} strokeWidth={isActive ? 2.5 : 2} />
-                    <span className="text-[10px] font-semibold uppercase tracking-wider">Dogs</span>
-                    {isActive && (
-                      <div className="absolute bottom-1 h-1.5 w-1.5 rounded-full bg-primary" />
-                    )}
-                  </>
-                )}
-              </NavLink>
+                <NavLink
+                  to="/identify"
+                  className={({ isActive }) =>
+                    `relative flex h-full w-full flex-col items-center justify-center gap-1 transition-colors ${
+                      isActive ? 'text-primary' : 'text-muted'
+                    }`
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      <Search size={24} strokeWidth={isActive ? 2.5 : 2} />
+                      <span className="text-[10px] font-semibold uppercase tracking-wider">Identify</span>
+                      {isActive && (
+                        <div className="absolute bottom-1 h-1.5 w-1.5 rounded-full bg-primary" />
+                      )}
+                    </>
+                  )}
+                </NavLink>
 
-              <NavLink
-                to="/map"
-                className={({ isActive }) =>
-                  `relative flex h-full w-full flex-col items-center justify-center gap-1 transition-colors ${
-                    isActive ? 'text-primary' : 'text-muted'
-                  }`
-                }
-              >
-                {({ isActive }) => (
-                  <>
-                    <MapIcon size={24} strokeWidth={isActive ? 2.5 : 2} />
-                    <span className="text-[10px] font-semibold uppercase tracking-wider">Map</span>
-                    {isActive && (
-                      <div className="absolute bottom-1 h-1.5 w-1.5 rounded-full bg-primary" />
-                    )}
-                  </>
-                )}
-              </NavLink>
+                <NavLink
+                  to="/dog/recent"
+                  className={({ isActive }) =>
+                    `relative flex h-full w-full flex-col items-center justify-center gap-1 transition-colors ${
+                      isActive ? 'text-primary' : 'text-muted'
+                    }`
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      <Dog size={24} strokeWidth={isActive ? 2.5 : 2} />
+                      <span className="text-[10px] font-semibold uppercase tracking-wider">Dogs</span>
+                      {isActive && (
+                        <div className="absolute bottom-1 h-1.5 w-1.5 rounded-full bg-primary" />
+                      )}
+                    </>
+                  )}
+                </NavLink>
 
-              <NavLink
-                to="/"
-                className={({ isActive }) =>
-                  `relative flex h-full w-full flex-col items-center justify-center gap-1 transition-colors ${
-                    isActive ? 'text-primary' : 'text-muted'
-                  }`
-                }
-              >
-                {({ isActive }) => (
-                  <>
-                    <LayoutDashboard size={24} strokeWidth={isActive ? 2.5 : 2} />
-                    <span className="text-[10px] font-semibold uppercase tracking-wider">Stats</span>
-                    {isActive && (
-                      <div className="absolute bottom-1 h-1.5 w-1.5 rounded-full bg-primary" />
-                    )}
-                  </>
-                )}
-              </NavLink>
-            </div>
-          </nav>
-          <Toaster />
-        </div>
-      </Router>
-    </QueryClientProvider>
+                <NavLink
+                  to="/map"
+                  className={({ isActive }) =>
+                    `relative flex h-full w-full flex-col items-center justify-center gap-1 transition-colors ${
+                      isActive ? 'text-primary' : 'text-muted'
+                    }`
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      <MapIcon size={24} strokeWidth={isActive ? 2.5 : 2} />
+                      <span className="text-[10px] font-semibold uppercase tracking-wider">Map</span>
+                      {isActive && (
+                        <div className="absolute bottom-1 h-1.5 w-1.5 rounded-full bg-primary" />
+                      )}
+                    </>
+                  )}
+                </NavLink>
+
+                <NavLink
+                  to="/"
+                  className={({ isActive }) =>
+                    `relative flex h-full w-full flex-col items-center justify-center gap-1 transition-colors ${
+                      isActive ? 'text-primary' : 'text-muted'
+                    }`
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      <LayoutDashboard size={24} strokeWidth={isActive ? 2.5 : 2} />
+                      <span className="text-[10px] font-semibold uppercase tracking-wider">Stats</span>
+                      {isActive && (
+                        <div className="absolute bottom-1 h-1.5 w-1.5 rounded-full bg-primary" />
+                      )}
+                    </>
+                  )}
+                </NavLink>
+              </div>
+            </nav>
+            <Toaster />
+          </div>
+        </Router>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 };
 
