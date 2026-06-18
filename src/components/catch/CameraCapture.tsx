@@ -5,8 +5,9 @@ import { useCamera } from '../../hooks/useCamera';
 import { Button } from '../ui/button';
 
 export const CameraCapture: React.FC = () => {
-  const { photoDataUrl, photoSize, retakePhoto } = useCatchStore();
-  const { capturePhoto } = useCamera();
+  const { draft } = useCatchStore();
+  const { photo_dataurl: photoDataUrl, photo_size: photoSize } = draft;
+  const { capturePhoto, retakePhoto } = useCamera();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleAreaClick = () => {

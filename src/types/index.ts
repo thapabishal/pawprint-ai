@@ -7,6 +7,8 @@ export type SterilizationStatus = 'intact' | 'sterilized' | 'unknown';
 export type EarType = 'prick' | 'semi_floppy' | 'fully_floppy' | 'cropped' | 'torn_notched';
 export type CoatColor = 'red_brown' | 'black' | 'white' | 'grey' | 'brindle' | 'mixed';
 export type Marking = 'white_chest' | 'white_paws' | 'black_mask' | 'sickle_tail' | 'curled_tail';
+export type GPSStatus = "idle" | "requesting" | "success" | "failed" | "unavailable";
+
 export type EventType = 'catch' | 'vaccinate' | 'sterilize' | 'recover' | 'release' | 'observation';
 
 export interface VisualTags {
@@ -73,6 +75,8 @@ export interface CatchDraft {
   location: GeoPoint | null;
   location_accuracy: number | null;
   notes: string;
+  handler_name: string;
+  photo_size: number | null;
   created_at: string;       // draft started
   last_saved: string;       // last localStorage save
 }

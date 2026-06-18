@@ -1,6 +1,10 @@
 export const GPS_SEARCH_RADIUS_KM = 2;
 export const IMAGE_MAX_SIZE_KB = 800;
 
+export const DRAFT_KEY = 'pawprint_catch_draft';
+export const DRAFT_MAX_AGE_HOURS = 24;
+export const UPLOAD_QUEUE_KEY = 'pawprint_upload_queue';
+
 export const EVENT_TYPES = {
   CATCH: 'catch',
   VACCINATE: 'vaccinate',
