@@ -61,9 +61,8 @@ export interface DogWithStatus extends Dog {
   events: DogEvent[];
 }
 
-// Catch form draft — stored in localStorage
 export interface CatchDraft {
-  id: string;               // local draft ID
+  id: string;
   photo_dataurl: string | null;
   photo_size: number | null;
   sex: Sex;
@@ -74,15 +73,66 @@ export interface CatchDraft {
   location_accuracy: number | null;
   handler_name: string;
   notes: string;
-  created_at: string;       // draft started
-  last_saved: string;       // last localStorage save
+  created_at: string;
+  last_saved: string;
 }
 
-// Match result from identify flow
 export interface MatchResult {
   dog: DogWithStatus;
-  similarity_score: number | null;  // null if AI not available (V1)
+  similarity_score: number | null;
   gps_distance_metres: number;
-  tag_overlap_score: number;        // 0-1: how many visual tags match
-  composite_score: number;          // weighted combination
+  tag_overlap_score: number;
+  composite_score: number;
+}
+
+export interface DogCurrentStatusView {
+  dog_id: string;
+  current_status: EventType;
+  last_event_at: string;
+  last_event_location: unknown;
+  last_notes: string | null;
+  last_handler: string | null;
+  sex: Sex;
+  age_group: AgeGroup;
+  condition: Condition;
+  sterilization_status: SterilizationStatus;
+  visual_tags: VisualTags;
+  cover_image_url: string | null;
+  registered_at: string;
+  catch_location: unknown;
+  catch_location_accuracy: number | null;
+  catch_timestamp: string;
+  catch_handler: string | null;
+  catch_notes: string | null;
+}
+
+export interface DogCNVRProgressView {
+  dog_id: string;
+  registered_at: string;
+  caught_at: string | null;
+  vaccinated_at: string | null;
+  sterilized_at: string | null;
+  released_at: string | null;
+  is_caught: boolean;
+  is_vaccinated: boolean;
+  is_sterilized: boolean;
+  is_released: boolean;
+  days_in_programme: number;
+  catch_location: unknown;
+}
+
+export interface DashboardStats {
+  total_registered: number;
+  currently_in_clinic: number;
+  released_in_period: number;
+  needs_attention: number;
+  caught_in_period: number;
+  vaccinated_in_period: number;
+  sterilized_in_period: number;
+}
+
+export interface RecentActivityEvent extends DogEvent {
+  dogs: {
+    cover_image_url: string | null;
+  } | null;
 }
