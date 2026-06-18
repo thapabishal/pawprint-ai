@@ -1,0 +1,11 @@
+{
+  "project_name": "PawPrint AI",
+  "task": "Production Hardening and Vercel Deployment Preparation",
+  "key_learnings": [
+    "Used 'import type' for TypeScript compliance with 'verbatimModuleSyntax'.",
+    "Implemented SPA rewrites and security headers in vercel.json.",
+    "Ensured 100% alt text coverage for <img> tags to meet Accessibility requirements.",
+    "Resolved 'any' bypasses in Supabase RPC calls using unknown casting.",
+    "Standardized .gitignore and provided .env.example for secure deployments."
+  ]
+}

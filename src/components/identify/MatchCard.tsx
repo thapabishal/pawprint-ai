@@ -44,9 +44,8 @@ const MatchCard: React.FC<MatchCardProps> = ({ result, onClick }) => {
       <div className="flex gap-3">
         <div className="w-[68px] h-[68px] rounded-[10px] border border-[#E5E7EB] overflow-hidden bg-gray-100 flex-shrink-0">
           {dog.cover_image_url ? (
-            <img
-              src={dog.cover_image_url}
-              alt="Dog"
+              <img src={dog.cover_image_url}
+              alt="Reference photo of dog for matching"
               className="w-full h-full object-cover"
             />
           ) : (

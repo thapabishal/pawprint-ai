@@ -1,73 +1,28 @@
-# React + TypeScript + Vite
+# PawPrint AI
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+PawPrint AI is a Progressive Web App (PWA) designed for CNVR (Catch-Neuter-Vaccinate-Release) dog tracking in Kathmandu, Nepal. It uses AI-powered visual matching and GPS tracking to manage community dog populations efficiently.
 
-Currently, two official plugins are available:
+## Live URL
+[https://pawprint-ai-nepal.vercel.app](https://pawprint-ai-nepal.vercel.app) (Placeholder)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 5-Step Setup
+1. **Clone the repository:** `git clone https://github.com/example/pawprint-ai.git`
+2. **Install dependencies:** `npm install`
+3. **Configure Environment:** Create `.env.local` using `.env.example` as a template.
+4. **Setup Supabase:** Run the SQL schema found in `schema.sql` in your Supabase project.
+5. **Start Development:** `npm run dev` or build with `npm run build`.
 
-## React Compiler
+## Environment Variables
+* `VITE_SUPABASE_URL`: Your Supabase Project URL.
+* `VITE_SUPABASE_ANON_KEY`: Your Supabase Anonymous API Key.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Tech Stack
+* **Frontend:** React 19, TypeScript, Vite, Tailwind CSS.
+* **UI Components:** Radix UI, Lucide React, Shadcn/UI.
+* **Database & Auth:** Supabase.
+* **Mapping:** Leaflet, React Leaflet.
+* **State Management:** Zustand, TanStack Query.
+* **PWA:** VitePWA.
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## License
+MIT License - Copyright (c) 2026 PawPrint AI

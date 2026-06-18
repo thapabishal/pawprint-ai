@@ -51,7 +51,7 @@ const MatchConfirmation: React.FC<MatchConfirmationProps> = ({
               <img
                 src={currentPhoto || ''}
                 className="w-full h-full object-cover"
-                alt="Just taken"
+                alt="Captured photo of the dog for comparison"
               />
               <div className="absolute bottom-2 left-2 bg-black/50 backdrop-blur-md px-2 py-0.5 rounded text-white text-[10px] font-bold">
                 Just taken
@@ -62,7 +62,7 @@ const MatchConfirmation: React.FC<MatchConfirmationProps> = ({
               <img
                 src={dog.cover_image_url || ''}
                 className="w-full h-full object-cover"
-                alt="Original catch"
+                alt="Original photo of the dog from registration"
               />
               <div className="absolute bottom-2 right-2 bg-black/50 backdrop-blur-md px-2 py-0.5 rounded text-white text-[10px] font-bold">
                 Caught {formatDistanceToNow(catchDate)} ago
