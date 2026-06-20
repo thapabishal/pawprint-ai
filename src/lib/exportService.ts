@@ -15,6 +15,10 @@ interface ExportData {
 export const exportService = {
   async generateDashboardPDF(data: ExportData) {
     const { stats, range, boosters } = data;
+
+    // Safety check for stats
+    if (!stats) throw new Error("Missing statistics for report generation");
+
     const doc = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
@@ -56,7 +60,7 @@ export const exportService = {
     doc.setFontSize(8);
     doc.text(`REF: ${format(new Date(), 'yyyyMMdd')}-X`, 150, 15);
     doc.text(`DATE: ${format(new Date(), 'PPP')}`, 150, 21);
-    doc.text(`RANGE: ${range.toUpperCase()}`, 150, 27);
+    doc.text(`RANGE: ${(range || 'all').toUpperCase()}`, 150, 27);
 
     let y = 65;
 
@@ -69,10 +73,10 @@ export const exportService = {
     y += 10;
 
     const summaryItems = [
-      { label: 'Total Dogs', value: stats.total_registered, color: primaryColor },
-      { label: 'Active Care', value: stats.currently_in_clinic, color: [245, 158, 11] },
-      { label: 'Successful', value: stats.released_in_period, color: [16, 185, 129] },
-      { label: 'Critical', value: stats.needs_attention, color: [239, 68, 68] }
+      { label: 'Total Dogs', value: stats.total_registered || 0, color: primaryColor },
+      { label: 'Active Care', value: stats.currently_in_clinic || 0, color: [245, 158, 11] },
+      { label: 'Successful', value: stats.released_in_period || 0, color: [16, 185, 129] },
+      { label: 'Critical', value: stats.needs_attention || 0, color: [239, 68, 68] }
     ];
 
     summaryItems.forEach((item, i) => {
@@ -91,7 +95,7 @@ export const exportService = {
 
       doc.setFontSize(18);
       doc.setTextColor(item.color[0], item.color[1], item.color[2]);
-      doc.text(item.value.toString(), x + 5, y + 22);
+      doc.text((item.value || 0).toString(), x + 5, y + 22);
     });
 
     y += 45;
@@ -117,16 +121,16 @@ export const exportService = {
     doc.text('CNVR: CATCH-NEUTER-VACCINATE-RELEASE', 30, y + 11);
 
     const cnStats = [
-      { l: 'Registered', v: stats.cnvr_total },
-      { l: 'Caught', v: stats.cnvr_caught_period },
-      { l: 'Sterilized', v: stats.cnvr_sterilized_period },
-      { l: 'Released', v: stats.cnvr_released_period }
+      { l: 'Registered', v: stats.cnvr_total || 0 },
+      { l: 'Caught', v: stats.cnvr_caught_period || 0 },
+      { l: 'Sterilized', v: stats.cnvr_sterilized_period || 0 },
+      { l: 'Released', v: stats.cnvr_released_period || 0 }
     ];
 
     cnStats.forEach((s, i) => {
       doc.setTextColor(darkColor[0], darkColor[1], darkColor[2]);
       doc.setFontSize(12);
-      doc.text(s.v.toString(), 30 + (i * 40), y + 28);
+      doc.text((s.v || 0).toString(), 30 + (i * 40), y + 28);
       doc.setTextColor(grayColor[0], grayColor[1], grayColor[2]);
       doc.setFontSize(7);
       doc.text(s.l, 30 + (i * 40), y + 34);
@@ -135,7 +139,8 @@ export const exportService = {
     // Pipeline Bar
     doc.setFillColor(229, 231, 235);
     doc.roundedRect(30, y + 42, 150, 1.5, 0.5, 0.5, 'F');
-    const pWidth = Math.min(150, (stats.cnvr_released_period / (stats.cnvr_caught_period || 1)) * 150);
+    const caughtVal = stats.cnvr_caught_period || 1;
+    const pWidth = Math.min(150, ((stats.cnvr_released_period || 0) / caughtVal) * 150);
     doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
     doc.roundedRect(30, y + 42, pWidth, 1.5, 0.5, 0.5, 'F');
 
@@ -152,28 +157,28 @@ export const exportService = {
     doc.text('FIELD VACCINATION & BOOSTER CAMPS', 30, y + 11);
 
     const vStats = [
-      { l: 'Covered', v: stats.vacc_total },
-      { l: 'Rabies', v: stats.vacc_rabies_period },
-      { l: 'Boosters', v: stats.vacc_booster_period },
-      { l: 'Due', v: stats.vacc_boosters_due }
+      { l: 'Covered', v: stats.vacc_total || 0 },
+      { l: 'Rabies', v: stats.vacc_rabies_period || 0 },
+      { l: 'Boosters', v: stats.vacc_booster_period || 0 },
+      { l: 'Due', v: stats.vacc_boosters_due || 0 }
     ];
 
     vStats.forEach((s, i) => {
       doc.setTextColor(darkColor[0], darkColor[1], darkColor[2]);
       doc.setFontSize(12);
-      doc.text(s.v.toString(), 30 + (i * 40), y + 28);
+      doc.text((s.v || 0).toString(), 30 + (i * 40), y + 28);
       doc.setTextColor(grayColor[0], grayColor[1], grayColor[2]);
       doc.setFontSize(7);
       doc.text(s.l, 30 + (i * 40), y + 34);
     });
 
     // Vaccine Breakdown Bars
-    const maxV = Math.max(stats.vacc_rabies_period, stats.vacc_distemper_period, stats.vacc_combo_period, 1);
+    const maxV = Math.max(stats.vacc_rabies_period || 0, stats.vacc_distemper_period || 0, stats.vacc_combo_period || 0, 1);
     const vColors = [[240, 165, 0], [59, 130, 246], [139, 92, 246]];
     const bStats = [
-      { l: 'Rabies', v: stats.vacc_rabies_period },
-      { l: 'Distemper', v: stats.vacc_distemper_period },
-      { l: 'Combo', v: stats.vacc_combo_period }
+      { l: 'Rabies', v: stats.vacc_rabies_period || 0 },
+      { l: 'Distemper', v: stats.vacc_distemper_period || 0 },
+      { l: 'Combo', v: stats.vacc_combo_period || 0 }
     ];
 
     bStats.forEach((s, i) => {
@@ -204,10 +209,12 @@ export const exportService = {
 
       y += 8;
       boosters.slice(0, 8).forEach((dog) => {
-        const isOverdue = dog.next_vaccination_due && new Date(dog.next_vaccination_due) < new Date();
+        const dueAt = dog.next_vaccination_due ? new Date(dog.next_vaccination_due) : null;
+        const isOverdue = dueAt && dueAt < new Date();
+
         doc.setTextColor(darkColor[0], darkColor[1], darkColor[2]);
         doc.setFontSize(8);
-        doc.text(dog.id.split('-')[0].toUpperCase(), 25, y + 6);
+        doc.text((dog.id || '???').split('-')[0].toUpperCase(), 25, y + 6);
         doc.text(dog.vaccination_date ? format(new Date(dog.vaccination_date), 'MMM d, yyyy') : '-', 70, y + 6);
 
         if (isOverdue) doc.setTextColor(220, 38, 38);
@@ -224,7 +231,7 @@ export const exportService = {
 
     // --- FOOTER ---
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const pageCount = (doc as any).internal.getNumberOfPages();
+    const pageCount = (doc as any).internal.getNumberOfPages() || 1;
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
       doc.setDrawColor(229, 231, 235);

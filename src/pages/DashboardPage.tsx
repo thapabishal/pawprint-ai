@@ -490,7 +490,7 @@ const DashboardPage: React.FC = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('dogs')
-        .select('id, cover_image_url, vaccination_date, next_vaccination_due, notes')
+        .select('id, vaccination_date, next_vaccination_due')
         .eq('vaccination_status', 'vaccinated')
         .lte('next_vaccination_due', new Date(Date.now() + 30*24*60*60*1000).toISOString())
         .order('next_vaccination_due', { ascending: true })
@@ -502,28 +502,46 @@ const DashboardPage: React.FC = () => {
   });
 
   const handleExport = async () => {
-    if (!stats) return;
+    const currentStats = stats || {
+        total_registered: 0,
+        currently_in_clinic: 0,
+        released_in_period: 0,
+        needs_attention: 0,
+        cnvr_total: 0,
+        cnvr_caught_period: 0,
+        cnvr_sterilized_period: 0,
+        cnvr_released_period: 0,
+        vacc_total: 0,
+        vacc_in_period: 0,
+        vacc_rabies_period: 0,
+        vacc_distemper_period: 0,
+        vacc_combo_period: 0,
+        vacc_booster_period: 0,
+        vacc_boosters_due: 0
+    };
+
     setIsExporting(true);
     toast({
       title: "Generating Report",
-      description: "Please wait while we prepare your PDF document...",
+      description: "Preparing your professional executive summary...",
     });
 
     try {
       await exportService.generateDashboardPDF({
-        stats,
+        stats: currentStats as DashboardStats,
         range,
-        boosters: boosters || []
+        boosters: (boosters || []) as any[]
       });
+
       toast({
         title: "Export Successful",
-        description: "Your programme report has been downloaded.",
+        description: "The report has been generated and download should start.",
       });
     } catch (err) {
       console.error('Export failed:', err);
       toast({
-        title: "Export Failed",
-        description: "There was an error generating your report.",
+        title: "Export Error",
+        description: err instanceof Error ? err.message : "An unexpected error occurred during PDF generation.",
         variant: "destructive"
       });
     } finally {
@@ -557,10 +575,10 @@ const DashboardPage: React.FC = () => {
             <button
               onClick={handleExport}
               disabled={isExporting}
-              className="h-10 px-4 rounded-[12px] bg-white border border-gray-200 text-[13px] font-bold text-gray-700 shadow-sm hover:bg-gray-50 transition-colors flex items-center gap-2 disabled:opacity-50"
+              className="h-10 px-4 rounded-[12px] bg-white border border-gray-200 text-[13px] font-bold text-gray-700 shadow-sm hover:bg-gray-50 transition-colors flex items-center gap-2 disabled:opacity-50 active:scale-95"
             >
-              {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-              Export
+              {isExporting ? <Loader2 size={16} className="animate-spin text-primary" /> : <Download size={16} className="text-primary" />}
+              <span>Export</span>
             </button>
           </div>
         </header>
