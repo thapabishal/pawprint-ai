@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useCatchStore } from '../stores/catchStore';
 import { useDraftSave } from '../hooks/useDraftSave';
 import { CameraCapture } from '../components/catch/CameraCapture';
@@ -9,13 +9,26 @@ import { CatchSuccess } from '../components/catch/CatchSuccess';
 import { useSubmitCatch } from '../hooks/useSubmitCatch';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
-import { useNavigate } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Loader2, Syringe, Microscope } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import type { ProgrammeType, VaccineType } from '@/types';
 
 const CatchPage: React.FC = () => {
   const navigate = useNavigate();
-  const { draft, setNotes, resetDraft } = useCatchStore();
+  const location = useLocation();
+  const { draft, setNotes, resetDraft, setProgrammeType, setVaccineType } = useCatchStore();
   useDraftSave(draft);
+
+  useEffect(() => {
+    const state = location.state as { defaultProgramme?: ProgrammeType; defaultVaccineType?: VaccineType } | null;
+    if (state?.defaultProgramme) {
+      setProgrammeType(state.defaultProgramme);
+    }
+    if (state?.defaultVaccineType) {
+      setVaccineType(state.defaultVaccineType);
+    }
+  }, [location.state, setProgrammeType, setVaccineType]);
 
   const {
     isSubmitting,
@@ -41,11 +54,23 @@ const CatchPage: React.FC = () => {
     resetDraft();
   };
 
+  const isVaccination = draft.programme_type === 'vaccination';
+
   return (
     <div className="flex flex-col min-h-screen bg-white">
       {/* Fixed Header */}
       <header className="fixed top-0 left-0 right-0 h-[56px] bg-white border-b border-[#E5E7EB] z-50 flex items-center justify-between px-4">
-        <h1 className="text-[18px] font-bold text-[#111827]">🐾 New Catch</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-[18px] font-bold text-[#111827]">
+            {isVaccination ? "💉 Vaccination" : "🐾 New Catch"}
+          </h1>
+          <Badge className={cn(
+            "text-[10px] uppercase tracking-wider",
+            isVaccination ? "bg-[#F0A500] hover:bg-[#F0A500]" : "bg-[#0D7377] hover:bg-[#0D7377]"
+          )}>
+            {draft.programme_type}
+          </Badge>
+        </div>
         <div className="flex items-center gap-1.5">
           <div className="w-2 h-2 rounded-full bg-[#0D7377] animate-pulse" />
           <span className="text-[11px] font-medium text-[#9CA3AF]">Saving...</span>
@@ -54,6 +79,50 @@ const CatchPage: React.FC = () => {
 
       {/* Main Content Area */}
       <main className="flex-1 pt-[56px] pb-[calc(68px+env(safe-area-inset-bottom)+80px)]">
+        {/* Programme Switcher */}
+        <div className="px-4 py-3 bg-gray-50 flex gap-2">
+           <button
+             onClick={() => setProgrammeType('cnvr')}
+             className={cn(
+               "flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[13px] font-bold transition-all border",
+               !isVaccination ? "bg-[#0D7377] text-white border-[#0D7377]" : "bg-white text-gray-500 border-gray-200"
+             )}
+           >
+             <Microscope size={14} /> CNVR
+           </button>
+           <button
+             onClick={() => setProgrammeType('vaccination')}
+             className={cn(
+               "flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[13px] font-bold transition-all border",
+               isVaccination ? "bg-[#F0A500] text-white border-[#F0A500]" : "bg-white text-gray-500 border-gray-200"
+             )}
+           >
+             <Syringe size={14} /> Vaccination
+           </button>
+        </div>
+
+        {isVaccination && (
+          <div className="px-4 py-3 bg-amber-50/50 border-b border-amber-100">
+             <label className="text-[11px] font-bold text-amber-700 uppercase tracking-wider block mb-2">Vaccine Type</label>
+             <div className="flex gap-2 overflow-x-auto no-scrollbar">
+                {(['rabies', 'distemper', 'combo', 'booster'] as VaccineType[]).map((vt) => (
+                  <button
+                    key={vt}
+                    onClick={() => setVaccineType(vt)}
+                    className={cn(
+                      "px-4 py-1.5 rounded-full text-[12px] font-bold whitespace-nowrap transition-all border",
+                      draft.vaccine_type === vt
+                        ? "bg-[#F0A500] text-white border-[#F0A500] shadow-sm"
+                        : "bg-white text-amber-700 border-amber-200 hover:bg-amber-50"
+                    )}
+                  >
+                    {vt.charAt(0).toUpperCase() + vt.slice(1)}
+                  </button>
+                ))}
+             </div>
+          </div>
+        )}
+
         <div className="py-2">
           <LocationCapture />
         </div>
@@ -95,7 +164,10 @@ const CatchPage: React.FC = () => {
           <Button
             onClick={submitCatch}
             disabled={isSubmitting}
-            className="w-full h-[56px] bg-[#0D7377] hover:bg-[#0D7377]/90 text-white text-[16px] font-bold rounded-[12px] shadow-[0_0_20px_rgba(13,115,119,0.25)] active:scale-[0.96] transition-all disabled:opacity-70"
+            className={cn(
+              "w-full h-[56px] text-white text-[16px] font-bold rounded-[12px] shadow-lg active:scale-[0.96] transition-all disabled:opacity-70",
+              isVaccination ? "bg-[#F0A500] hover:bg-[#F0A500]/90" : "bg-[#0D7377] hover:bg-[#0D7377]/90"
+            )}
           >
             {isSubmitting ? (
               <div className="flex items-center gap-2">
@@ -103,7 +175,7 @@ const CatchPage: React.FC = () => {
                 <span>Registering...</span>
               </div>
             ) : (
-              "Save Catch"
+              isVaccination ? "Record Vaccination" : "Save Catch"
             )}
           </Button>
         </div>

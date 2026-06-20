@@ -83,6 +83,8 @@ export interface CatchDraft {
   location_accuracy: number | null;
   handler_name: string;
   notes: string;
+  programme_type: ProgrammeType;
+  vaccine_type: VaccineType | null;
   created_at: string;
   last_saved: string;
 }
@@ -150,12 +152,16 @@ export interface DashboardStats {
   vacc_total: number;
   vacc_in_period: number;
   vacc_rabies_period: number;
+  vacc_distemper_period: number;
+  vacc_combo_period: number;
+  vacc_booster_period: number;
   vacc_boosters_due: number;
 }
 
 export interface RecentActivityEvent extends DogEvent {
   dogs: {
     cover_image_url: string | null;
+    programme_type: ProgrammeType;
   } | null;
 }
 

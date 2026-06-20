@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Sex, AgeGroup, Condition, GeoPoint, VisualTags, GPSStatus, CatchDraft } from '../types';
+import type { Sex, AgeGroup, Condition, GeoPoint, VisualTags, GPSStatus, CatchDraft, ProgrammeType, VaccineType } from '../types';
 
 interface CatchState {
   draft: CatchDraft;
@@ -17,12 +17,14 @@ interface CatchState {
   setGpsError: (error: string | null) => void;
   setNotes: (notes: string) => void;
   setHandlerName: (name: string) => void;
-  initDraft: () => void;
+  setProgrammeType: (type: ProgrammeType) => void;
+  setVaccineType: (type: VaccineType | null) => void;
+  initDraft: (initial?: Partial<CatchDraft>) => void;
   loadSavedDraft: (draft: CatchDraft) => void;
   resetDraft: () => void;
 }
 
-const createEmptyDraft = (): CatchDraft => ({
+const createEmptyDraft = (overrides?: Partial<CatchDraft>): CatchDraft => ({
   id: crypto.randomUUID(),
   photo_dataurl: null,
   photo_size: null,
@@ -34,8 +36,11 @@ const createEmptyDraft = (): CatchDraft => ({
   location_accuracy: null,
   notes: '',
   handler_name: '',
+  programme_type: 'cnvr',
+  vaccine_type: null,
   created_at: new Date().toISOString(),
   last_saved: new Date().toISOString(),
+  ...overrides,
 });
 
 export const useCatchStore = create<CatchState>((set) => ({
@@ -82,7 +87,15 @@ export const useCatchStore = create<CatchState>((set) => ({
     set((state) => ({
       draft: { ...state.draft, handler_name: name, last_saved: new Date().toISOString() },
     })),
-  initDraft: () => set({ draft: createEmptyDraft() }),
+  setProgrammeType: (programme_type) =>
+    set((state) => ({
+      draft: { ...state.draft, programme_type, last_saved: new Date().toISOString() },
+    })),
+  setVaccineType: (vaccine_type) =>
+    set((state) => ({
+      draft: { ...state.draft, vaccine_type, last_saved: new Date().toISOString() },
+    })),
+  initDraft: (initial) => set({ draft: createEmptyDraft(initial) }),
   loadSavedDraft: (draft) => set({ draft }),
   resetDraft: () => set({ draft: createEmptyDraft(), gpsStatus: 'idle', gpsError: null }),
 }));
