@@ -23,6 +23,7 @@ export default {
           observation: '#6B7280',
           critical: '#EF4444',
         },
+        accent: '#F0A500',
         dark: '#111827',
         body: '#374151',
         muted: '#6B7280',
