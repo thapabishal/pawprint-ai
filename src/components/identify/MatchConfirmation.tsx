@@ -15,7 +15,7 @@ interface MatchConfirmationProps {
   isProcessing: boolean;
 }
 
-export const MatchConfirmation: React.FC<MatchConfirmationProps> = ({
+const MatchConfirmation: React.FC<MatchConfirmationProps> = ({
   isOpen,
   onClose,
   result,
