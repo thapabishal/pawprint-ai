@@ -1,211 +1,136 @@
 import React from 'react';
 import { useCatchStore } from '../../stores/catchStore';
-import type { EarType, CoatColor, Marking } from '../../types';
 import { cn } from '../../lib/utils';
-import { Check } from 'lucide-react';
-
-interface TagCardProps {
-  label: string;
-  description?: string;
-  swatch?: string;
-  isGradient?: boolean;
-  gradientClass?: string;
-  isSelected: boolean;
-  onClick: () => void;
-  className?: string;
-}
-
-const TagCard: React.FC<TagCardProps> = ({
-  label,
-  description,
-  swatch,
-  isGradient,
-  gradientClass,
-  isSelected,
-  onClick,
-  className
-}) => {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "flex flex-col items-center justify-center p-2 rounded-[12px] border-[1.5px] transition-all duration-150 active:scale-[0.96] text-center",
-        isSelected
-          ? "bg-[#E6F7F6] border-[#0D7377] text-[#0D7377]"
-          : "bg-white border-[#E5E7EB] text-[#374151] hover:bg-[#F9FAFB]",
-        className
-      )}
-    >
-      {swatch && (
-        <div
-          className={cn(
-            "w-6 h-6 rounded-full mb-1.5 border border-[#E5E7EB]",
-            isGradient ? gradientClass : ""
-          )}
-          style={!isGradient ? { backgroundColor: swatch } : undefined}
-        />
-      )}
-      <span className="text-[12px] font-semibold leading-tight">{label}</span>
-      {description && (
-        <span className="text-[10px] italic text-[#9CA3AF] mt-0.5 leading-tight">{description}</span>
-      )}
-    </button>
-  );
-};
-
-const MarkingCard: React.FC<{
-  label: string;
-  isSelected: boolean;
-  onClick: () => void;
-}> = ({ label, isSelected, onClick }) => {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "relative flex items-center justify-start px-4 h-[56px] rounded-[12px] border-[1.5px] transition-all duration-150 active:scale-[0.96]",
-        isSelected
-          ? "bg-[#E6F7F6] border-[#0D7377] text-[#0D7377]"
-          : "bg-white border-[#E5E7EB] text-[#374151] hover:bg-[#F9FAFB]"
-      )}
-    >
-      <span className="text-[12px] font-semibold">{label}</span>
-      <div className={cn(
-        "absolute top-2 right-2 w-[18px] h-[18px] rounded-full border transition-all duration-150 flex items-center justify-center",
-        isSelected
-          ? "bg-[#0D7377] border-[#0D7377] scale-110"
-          : "border-[#D1D5DB] bg-transparent"
-      )}>
-        {isSelected && <Check className="w-3 h-3 text-white stroke-[3px]" />}
-      </div>
-    </button>
-  );
-};
+import type { EarType, CoatColor, Marking, VisualTags } from '../../types';
+import { motion } from 'framer-motion';
 
 export const VisualTagsGrid: React.FC = () => {
   const { draft, setVisualTags } = useCatchStore();
   const tags = draft.visual_tags;
 
-  const updateEars = (ears: EarType) => {
-    setVisualTags({ ...tags, ears });
-  };
-
-  const updateCoat = (coat: CoatColor) => {
-    setVisualTags({ ...tags, coat });
+  const updateTags = (key: keyof VisualTags, value: any) => {
+    setVisualTags({ ...tags, [key]: value });
   };
 
   const toggleMarking = (marking: Marking) => {
-    const currentMarkings = tags.markings || [];
-    const newMarkings = currentMarkings.includes(marking)
-      ? currentMarkings.filter(m => m !== marking)
-      : [...currentMarkings, marking];
-    setVisualTags({ ...tags, markings: newMarkings });
+    const current = tags.markings || [];
+    const updated = current.includes(marking)
+      ? current.filter((m) => m !== marking)
+      : [...current, marking];
+    updateTags('markings', updated);
   };
 
+  const earOptions: { label: string; icon: string; value: EarType }[] = [
+    { label: 'Prick', icon: '👂', value: 'prick' },
+    { label: 'Semi-Floppy', icon: '🐶', value: 'semi_floppy' },
+    { label: 'Fully-Floppy', icon: '🐕', value: 'fully_floppy' },
+    { label: 'Cropped', icon: '✂️', value: 'cropped' },
+    { label: 'Torn/Notched', icon: '🏷️', value: 'torn_notched' },
+  ];
+
+  const coatOptions: { label: string; color: string; value: CoatColor }[] = [
+    { label: 'Red/Brown', color: 'bg-[#B45309]', value: 'red_brown' },
+    { label: 'Black', color: 'bg-black', value: 'black' },
+    { label: 'White', color: 'bg-white border-border border', value: 'white' },
+    { label: 'Grey', color: 'bg-gray-400', value: 'grey' },
+    { label: 'Brindle', color: 'bg-yellow-700 opacity-80', value: 'brindle' },
+    { label: 'Mixed', color: 'bg-gradient-to-br from-black via-brown-600 to-white', value: 'mixed' },
+  ];
+
+  const markingOptions: { label: string; icon: string; value: Marking }[] = [
+    { label: 'White Chest', icon: '👕', value: 'white_chest' },
+    { label: 'White Paws', icon: '🐾', value: 'white_paws' },
+    { label: 'Black Mask', icon: '🎭', value: 'black_mask' },
+    { label: 'Sickle Tail', icon: '🌙', value: 'sickle_tail' },
+    { label: 'Curled Tail', icon: '🌀', value: 'curled_tail' },
+  ];
+
+  const isVaccination = draft.programme_type === 'vaccination';
+
   return (
-    <div className="w-full space-y-8 px-4 py-4">
-      {/* EARS */}
-      <section className="space-y-3">
-        <h3 className="text-[14px] font-bold text-[#111827] border-l-[3px] border-[#0D7377] pl-3">EARS</h3>
-        <div className="grid grid-cols-3 gap-2">
-          <TagCard
-            label="Prick" description="Upright, pointed"
-            isSelected={tags.ears === 'prick'} onClick={() => updateEars('prick')}
-            className="min-h-[64px]"
-          />
-          <TagCard
-            label="Semi-floppy" description="Tips fold forward"
-            isSelected={tags.ears === 'semi_floppy'} onClick={() => updateEars('semi_floppy')}
-            className="min-h-[64px]"
-          />
-          <TagCard
-            label="Floppy" description="Hang down"
-            isSelected={tags.ears === 'fully_floppy'} onClick={() => updateEars('fully_floppy')}
-            className="min-h-[64px]"
-          />
-          <TagCard
-            label="Cropped" description="Cut short"
-            isSelected={tags.ears === 'cropped'} onClick={() => updateEars('cropped')}
-            className="min-h-[64px]"
-          />
-          <TagCard
-            label="Torn" description="Damaged edges"
-            isSelected={tags.ears === 'torn_notched'} onClick={() => updateEars('torn_notched')}
-            className="min-h-[64px]"
-          />
+    <div className="space-y-8">
+      {/* Ears Section */}
+      <section className="space-y-3 px-5">
+        <label className="text-[11px] font-extrabold text-muted uppercase tracking-[0.15em] ml-1">Ear Type</label>
+        <div className="flex overflow-x-auto pb-4 gap-3 no-scrollbar -mx-5 px-5">
+          {earOptions.map((opt) => (
+            <TagButton
+              key={opt.value}
+              label={opt.label}
+              icon={<span className="text-[20px]">{opt.icon}</span>}
+              isSelected={tags.ears === opt.value}
+              onClick={() => updateTags('ears', opt.value)}
+              isVaccination={isVaccination}
+            />
+          ))}
         </div>
       </section>
 
-      {/* COAT */}
-      <section className="space-y-3">
-        <h3 className="text-[14px] font-bold text-[#111827] border-l-[3px] border-[#0D7377] pl-3">COAT</h3>
-        <div className="grid grid-cols-3 gap-2">
-          <TagCard
-            label="Red/Brown" description="(Common)" swatch="#C2691A"
-            isSelected={tags.coat === 'red_brown'} onClick={() => updateCoat('red_brown')}
-            className="min-h-[64px]"
-          />
-          <TagCard
-            label="Black" swatch="#1F2937"
-            isSelected={tags.coat === 'black'} onClick={() => updateCoat('black')}
-            className="min-h-[64px]"
-          />
-          <TagCard
-            label="White" swatch="#F8FAFC"
-            isSelected={tags.coat === 'white'} onClick={() => updateCoat('white')}
-            className="min-h-[64px]"
-          />
-          <TagCard
-            label="Grey" swatch="#9CA3AF"
-            isSelected={tags.coat === 'grey'} onClick={() => updateCoat('grey')}
-            className="min-h-[64px]"
-          />
-          <TagCard
-            label="Brindle" isGradient gradientClass="bg-gradient-to-br from-[#8B4513] via-[#D2691E] to-[#8B4513]"
-            isSelected={tags.coat === 'brindle'} onClick={() => updateCoat('brindle')}
-            className="min-h-[64px]"
-          />
-          <TagCard
-            label="Mixed" isGradient gradientClass="bg-[conic-gradient(from_0deg,#F8FAFC_0deg_180deg,#1F2937_180deg_360deg)]"
-            isSelected={tags.coat === 'mixed'} onClick={() => updateCoat('mixed')}
-            className="min-h-[64px]"
-          />
+      {/* Coat Color Section */}
+      <section className="space-y-3 px-5">
+        <label className="text-[11px] font-extrabold text-muted uppercase tracking-[0.15em] ml-1">Coat Color</label>
+        <div className="grid grid-cols-3 gap-3">
+          {coatOptions.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => updateTags('coat', opt.value)}
+              className={cn(
+                "flex flex-col items-center gap-2 p-3 rounded-[20px] border-[1.5px] transition-all duration-300",
+                tags.coat === opt.value
+                  ? (isVaccination ? "border-accent bg-accent/5" : "border-primary bg-primary/5")
+                  : "border-border bg-white"
+              )}
+            >
+              <div className={cn("w-10 h-10 rounded-full shadow-inner", opt.color)} />
+              <span className={cn("text-[11px] font-bold", tags.coat === opt.value ? "text-dark" : "text-muted")}>{opt.label}</span>
+            </button>
+          ))}
         </div>
       </section>
 
-      {/* MARKINGS */}
-      <section className="space-y-3">
-        <div className="flex flex-col">
-          <h3 className="text-[14px] font-bold text-[#111827] border-l-[3px] border-[#0D7377] pl-3">MARKINGS</h3>
-          <span className="text-[11px] text-[#9CA3AF] italic mt-1 ml-4">Select all that apply</span>
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          <MarkingCard
-            label="White Chest"
-            isSelected={tags.markings?.includes('white_chest') ?? false}
-            onClick={() => toggleMarking('white_chest')}
-          />
-          <MarkingCard
-            label="White Paws"
-            isSelected={tags.markings?.includes('white_paws') ?? false}
-            onClick={() => toggleMarking('white_paws')}
-          />
-          <MarkingCard
-            label="Black Mask"
-            isSelected={tags.markings?.includes('black_mask') ?? false}
-            onClick={() => toggleMarking('black_mask')}
-          />
-          <MarkingCard
-            label="Sickle Tail"
-            isSelected={tags.markings?.includes('sickle_tail') ?? false}
-            onClick={() => toggleMarking('sickle_tail')}
-          />
-          <MarkingCard
-            label="Curled Tail"
-            isSelected={tags.markings?.includes('curled_tail') ?? false}
-            onClick={() => toggleMarking('curled_tail')}
-          />
+      {/* Markings Section */}
+      <section className="space-y-3 px-5">
+        <label className="text-[11px] font-extrabold text-muted uppercase tracking-[0.15em] ml-1">Distinct Markings</label>
+        <div className="flex flex-wrap gap-2">
+          {markingOptions.map((opt) => (
+            <TagButton
+              key={opt.value}
+              label={opt.label}
+              icon={<span className="text-[18px]">{opt.icon}</span>}
+              isSelected={tags.markings?.includes(opt.value)}
+              onClick={() => toggleMarking(opt.value)}
+              isVaccination={isVaccination}
+              small
+            />
+          ))}
         </div>
       </section>
     </div>
   );
 };
+
+interface TagButtonProps {
+  label: string;
+  icon: React.ReactNode;
+  isSelected?: boolean;
+  onClick: () => void;
+  isVaccination?: boolean;
+  small?: boolean;
+}
+
+const TagButton: React.FC<TagButtonProps> = ({ label, icon, isSelected, onClick, isVaccination, small }) => (
+  <motion.button
+    whileTap={{ scale: 0.96 }}
+    onClick={onClick}
+    className={cn(
+      "flex flex-col items-center justify-center rounded-[20px] border-[1.5px] transition-all duration-300 shrink-0",
+      small ? "px-4 py-3 min-w-[100px]" : "w-[100px] h-[100px]",
+      isSelected
+        ? (isVaccination ? "bg-accent/10 border-accent text-accent shadow-sm" : "bg-primary/10 border-primary text-primary shadow-sm")
+        : "bg-white border-border text-body hover:border-muted"
+    )}
+  >
+    {icon}
+    <span className={cn("mt-1.5 font-bold text-center leading-tight", small ? "text-[11px]" : "text-[12px]")}>{label}</span>
+  </motion.button>
+);
