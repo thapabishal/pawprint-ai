@@ -1,7 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import type { DogWithStatus, DogEvent } from '@/types';
+import type { DogWithStatus } from '@/types';
 
 export function useDog(dogId: string | undefined) {
   return useQuery({
@@ -25,7 +24,7 @@ export function useDog(dogId: string | undefined) {
 
       // Sort events by timestamp ascending
       const sortedEvents = (data.events || []).sort(
-        (a: DogEvent, b: DogEvent) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+        (a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
       );
 
       // Determine current status from last event
@@ -34,11 +33,11 @@ export function useDog(dogId: string | undefined) {
         : 'unknown';
 
       // Parse locations
-      const catchEvent = data.events?.find((e: DogEvent) => e.event_type === 'catch' || e.event_type === 'on_site_vaccinate');
+      const catchEvent = data.events?.find((e: any) => e.event_type === 'catch');
       const catchLocation = catchEvent?.location
         ? {
-            lat: ((catchEvent.location as unknown as { coordinates: number[] }).coordinates[1]),
-            lng: ((catchEvent.location as unknown as { coordinates: number[] }).coordinates[0])
+            lat: (catchEvent.location as any).coordinates[1],
+            lng: (catchEvent.location as any).coordinates[0]
           }
         : null;
 

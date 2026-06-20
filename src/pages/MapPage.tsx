@@ -4,7 +4,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap, Circle } from 'react-le
 import L from 'leaflet';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import type { DogCurrentStatusView, EventType } from '@/types';
+import type { DogCurrentStatusView, EventType, ProgrammeType } from '@/types';
 import { Navigation, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -23,6 +23,7 @@ const STATUS_COLORS: Record<string, string> = {
   sterilize: '#F59E0B',
   recover: '#F59E0B',
   release: '#10B981',
+  on_site_vaccinate: '#F0A500',
   observation: '#8B5CF6',
   critical: '#EF4444',
 };
@@ -32,20 +33,15 @@ const PROGRAMME_COLORS: Record<ProgrammeType, string> = {
   vaccination: '#F0A500',
 };
 
-const createCustomIcon = (dog: DogCurrentStatusView) => {
-  const isCritical = dog.condition === 'critical';
-  const isReleased = dog.current_status === 'release';
-  const isObservation = dog.current_status === 'observation';
+const createCustomIcon = (status: EventType, condition: string, programmeType: ProgrammeType) => {
+  const isCritical = condition === 'critical';
+  let color = isCritical ? STATUS_COLORS.critical : (STATUS_COLORS[status] || '#9CA3AF');
 
-  const color = isCritical
-    ? STATUS_COLORS.critical
-    : isObservation
-      ? STATUS_COLORS.observation
-      : isReleased
-        ? STATUS_COLORS.released
-        : STATUS_COLORS[dog.programme_type as keyof typeof STATUS_COLORS] || STATUS_COLORS.default;
-
-  const progColor = PROGRAMME_COLORS[dog.programme_type] || '#9CA3AF';
+  // If not critical and not a status with a specific color (like release/observation),
+  // use programme color for catch/vaccinate/sterilize/recover.
+  if (!isCritical && ['catch', 'vaccinate', 'sterilize', 'recover'].includes(status)) {
+    color = PROGRAMME_COLORS[programmeType] || color;
+  }
 
   return L.divIcon({
     className: '',
@@ -90,7 +86,7 @@ const MapPage: React.FC = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('dog_current_status')
-        .select('dog_id,current_status,last_event_location,cover_image_url,sex,age_group,condition');
+        .select('dog_id,current_status,last_event_location,cover_image_url,sex,age_group,condition,programme_type');
       if (error) throw error;
       return data as DogCurrentStatusView[];
     },
@@ -124,7 +120,7 @@ const MapPage: React.FC = () => {
 
   const statuses: { label: string, value: 'all' | EventType }[] = [
     { label: 'All Dogs', value: 'all' },
-    { label: 'In Clinic', value: 'catch' },
+    { label: 'Caught/Field', value: 'catch' },
     { label: 'Released', value: 'release' },
     { label: 'Observation', value: 'observation' },
   ];
@@ -166,7 +162,7 @@ const MapPage: React.FC = () => {
             <Marker
               key={dog.dog_id}
               position={pos}
-              icon={createCustomIcon(dog.current_status, dog.condition)}
+              icon={createCustomIcon(dog.current_status, dog.condition, dog.programme_type)}
             >
               <Popup>
                 <div className="flex flex-col p-3 w-full">
@@ -182,7 +178,7 @@ const MapPage: React.FC = () => {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-mono text-xs font-bold text-gray-900 truncate">
-                        ID: {dog.dog_id.split('-')[0].toUpperCase()}
+                        ID: {dog.dog_id?.split('-')[0].toUpperCase()}
                       </p>
                       <div className="flex items-center gap-1 mt-0.5">
                         <div
