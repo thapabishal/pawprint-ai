@@ -14,6 +14,9 @@ export default {
           subtle: '#E6F7F6',
           dark: '#0A5559',
         },
+        accent: {
+          DEFAULT: '#F0A500',
+        },
         status: {
           catch: '#F59E0B',
           vaccinate: '#3B82F6',

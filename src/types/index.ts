@@ -5,8 +5,10 @@ export type SterilizationStatus = 'intact' | 'sterilized' | 'unknown';
 export type EarType = 'prick' | 'semi_floppy' | 'fully_floppy' | 'cropped' | 'torn_notched';
 export type CoatColor = 'red_brown' | 'black' | 'white' | 'grey' | 'brindle' | 'mixed';
 export type Marking = 'white_chest' | 'white_paws' | 'black_mask' | 'sickle_tail' | 'curled_tail';
-export type EventType = 'catch' | 'vaccinate' | 'sterilize' | 'recover' | 'release' | 'observation';
+export type EventType = 'catch' | 'vaccinate' | 'sterilize' | 'recover' | 'release' | 'observation' | 'on_site_vaccinate';
 export type GPSStatus = 'idle' | 'requesting' | 'success' | 'failed' | 'unavailable';
+export type ProgrammeType = 'cnvr' | 'vaccination';
+export type VaccineType = 'rabies' | 'distemper' | 'combo' | 'booster';
 
 export interface VisualTags {
   ears?: EarType;
@@ -22,6 +24,10 @@ export interface Dog {
   sterilization_status: SterilizationStatus;
   visual_tags: VisualTags;
   cover_image_url: string | null;
+  programme_type: ProgrammeType;
+  vaccination_status: 'vaccinated' | 'unvaccinated' | 'unknown';
+  vaccination_date: string | null;
+  next_vaccination_due: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -35,6 +41,9 @@ export interface DogEvent {
   handler_name: string | null;
   notes: string | null;
   confirmed_match: boolean;
+  vaccine_type?: VaccineType | null;
+  vaccine_batch?: string | null;
+  vaccinator_name?: string | null;
   timestamp: string;
 }
 
@@ -73,6 +82,10 @@ export interface CatchDraft {
   location_accuracy: number | null;
   handler_name: string;
   notes: string;
+  programme_type: ProgrammeType;
+  vaccine_type: VaccineType;
+  vaccine_batch: string;
+  vaccinator_name: string;
   created_at: string;
   last_saved: string;
 }
@@ -98,6 +111,10 @@ export interface DogCurrentStatusView {
   sterilization_status: SterilizationStatus;
   visual_tags: VisualTags;
   cover_image_url: string | null;
+  programme_type: ProgrammeType;
+  vaccination_status: 'vaccinated' | 'unvaccinated' | 'unknown';
+  vaccination_date: string | null;
+  next_vaccination_due: string | null;
   registered_at: string;
   catch_location: unknown;
   catch_location_accuracy: number | null;
@@ -129,6 +146,14 @@ export interface DashboardStats {
   caught_in_period: number;
   vaccinated_in_period: number;
   sterilized_in_period: number;
+  cnvr_total: number;
+  cnvr_caught_period: number;
+  cnvr_sterilized_period: number;
+  cnvr_released_period: number;
+  vacc_total: number;
+  vacc_in_period: number;
+  vacc_rabies_period: number;
+  vacc_boosters_due: number;
 }
 
 export interface RecentActivityEvent extends DogEvent {

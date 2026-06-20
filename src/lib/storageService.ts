@@ -9,36 +9,50 @@ export interface UploadResult {
 
 export const storageService = {
   /**
-   * Uploads a dog cover photo to Supabase Storage and updates the database.
-   * This is a reusable service for both immediate and queued uploads.
+   * Uploads a dog photo to Supabase Storage and updates the database.
+   * Uploads both a unique historical record and a constant cover.webp.
    */
   async uploadDogCover(
     dogId: string,
     eventId: string | null,
     file: File | Blob
   ): Promise<UploadResult> {
-    const filePath = `${dogId}/cover.webp`;
+    const timestamp = Date.now();
+    const coverPath = `${dogId}/cover.webp`;
+    const historicalPath = eventId ? `${dogId}/${eventId}_${timestamp}.jpg` : null;
 
-    // 1. Upload to Storage
+    // 1. Upload historical record if eventId is provided
+    if (historicalPath) {
+      const { error: histError } = await supabase.storage
+        .from(STORAGE_BUCKET)
+        .upload(historicalPath, file, {
+          contentType: 'image/webp',
+          cacheControl: '3600',
+          upsert: true,
+        });
+      if (histError) console.warn('Historical photo upload failed:', histError.message);
+    }
+
+    // 2. Upload/Update the cover photo
     const { error: uploadError } = await supabase.storage
       .from(STORAGE_BUCKET)
-      .upload(filePath, file, {
+      .upload(coverPath, file, {
         contentType: 'image/webp',
         cacheControl: '3600',
-        upsert: true, // Allow overwriting if cover already exists
+        upsert: true,
       });
 
     if (uploadError) {
       throw new Error(`Storage upload failed: ${uploadError.message}`);
     }
 
-    // 2. Get Public URL
+    // 3. Get Public URL for the cover
     const { data: { publicUrl } } = supabase.storage
       .from(STORAGE_BUCKET)
-      .getPublicUrl(filePath);
+      .getPublicUrl(coverPath);
 
-    // 3. Update dogs table
-    // @ts-expect-error - Supabase generic types can be finicky in service modules
+    // 4. Update dogs table cover URL
+    // @ts-expect-error - Supabase generic types can be finicky
     const { error: dogUpdateError } = await (supabase.from('dogs').update as (args: unknown) => { eq: (col: string, val: string) => Promise<{ error: Error | null }> })({
       cover_image_url: publicUrl
     }).eq('id', dogId);
@@ -47,17 +61,21 @@ export const storageService = {
       throw new Error(`Failed to update dog cover URL: ${dogUpdateError.message}`);
     }
 
-    // 4. Insert into dog_images table
-    // @ts-expect-error - Supabase generic types can be finicky in service modules
+    // 5. Insert into dog_images table referencing the unique path if possible, otherwise cover
+    const imagePath = historicalPath || coverPath;
+    const { data: { publicUrl: imageUrl } } = supabase.storage
+      .from(STORAGE_BUCKET)
+      .getPublicUrl(imagePath);
+
+    // @ts-expect-error - Supabase generic types can be finicky
     const { error: imageInsertError } = await (supabase.from('dog_images').insert as (args: unknown) => Promise<{ error: Error | null }>)({
       dog_id: dogId,
       event_id: eventId,
-      image_url: publicUrl,
+      image_url: imageUrl,
       is_cover: true,
     });
 
     if (imageInsertError) {
-      // Log warning but don't fail the whole process if the main URL was updated
       console.warn('Failed to insert dog_images record:', imageInsertError.message);
     }
 

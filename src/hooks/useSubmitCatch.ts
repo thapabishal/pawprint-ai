@@ -19,7 +19,7 @@ interface QueuedCatch extends CatchDraft {
   retries: number;
 }
 
-interface CreateCatchResponse {
+interface CreateResponse {
   dog_id: string;
   event_id: string;
 }
@@ -52,8 +52,8 @@ export const useSubmitCatch = () => {
         retries: 0
       });
       localStorage.setItem(UPLOAD_QUEUE_KEY, JSON.stringify(queue));
-    } catch (e) {
-      console.error('Failed to queue upload:', e);
+    } catch {
+      console.error("Failed to queue upload");
     }
   }, []);
 
@@ -61,7 +61,13 @@ export const useSubmitCatch = () => {
     const queueString = localStorage.getItem(UPLOAD_QUEUE_KEY);
     if (!queueString) return;
 
-    const queue: QueuedCatch[] = JSON.parse(queueString);
+    let queue: QueuedCatch[];
+    try {
+      queue = JSON.parse(queueString);
+    } catch {
+      return;
+    }
+
     if (queue.length === 0) return;
 
     const remainingQueue: QueuedCatch[] = [];
@@ -79,22 +85,42 @@ export const useSubmitCatch = () => {
         const photoBlob = await dataURLToBlob(item.photo_dataurl);
         const compressedFile = await compressDogPhoto(photoBlob);
 
-        // RPC call to create dog and event record
-        const { data, error: rpcError } = await (supabase.rpc as unknown as (name: string, args: unknown) => Promise<{ data: CreateCatchResponse[] | null, error: { message: string } | null }>)('create_catch_event', {
-          p_sex: item.sex,
-          p_age_group: item.age_group,
-          p_condition: item.condition,
-          p_sterilization_status: 'unknown',
-          p_visual_tags: item.visual_tags,
-          p_lat: item.location?.lat ?? null,
-          p_lng: item.location?.lng ?? null,
-          p_location_accuracy: item.location_accuracy ?? null,
-          p_handler_name: item.handler_name,
-          p_notes: item.notes
-        });
+        // RPC call depends on programme_type
+        let response;
+        if (item.programme_type === 'vaccination') {
+          response = await (supabase.rpc as unknown as (name: string, args: unknown) => Promise<{ data: CreateResponse[] | null, error: { message: string } | null }>)('create_onsite_vaccination', {
+            p_sex: item.sex,
+            p_age_group: item.age_group,
+            p_condition: item.condition,
+            p_visual_tags: item.visual_tags,
+            p_lat: item.location?.lat ?? null,
+            p_lng: item.location?.lng ?? null,
+            p_location_accuracy: item.location_accuracy ?? null,
+            p_vaccine_type: item.vaccine_type,
+            p_vaccine_batch: item.vaccine_batch || null,
+            p_vaccinator_name: item.vaccinator_name || null,
+            p_handler_name: item.handler_name,
+            p_notes: item.notes
+          });
+        } else {
+          response = await (supabase.rpc as unknown as (name: string, args: unknown) => Promise<{ data: CreateResponse[] | null, error: { message: string } | null }>)('create_catch_event', {
+            p_sex: item.sex,
+            p_age_group: item.age_group,
+            p_condition: item.condition,
+            p_sterilization_status: 'unknown',
+            p_visual_tags: item.visual_tags,
+            p_lat: item.location?.lat ?? null,
+            p_lng: item.location?.lng ?? null,
+            p_location_accuracy: item.location_accuracy ?? null,
+            p_handler_name: item.handler_name,
+            p_notes: item.notes
+          });
+        }
+
+        const { data, error: rpcError } = response;
 
         if (rpcError) throw new Error(rpcError.message);
-        if (!data || !data[0]) throw new Error('No data returned from create_catch_event');
+        if (!data || !data[0]) throw new Error('No data returned from RPC');
 
         const { dog_id, event_id } = data[0];
 
@@ -115,7 +141,7 @@ export const useSubmitCatch = () => {
     if (successCount > 0) {
       toast({
         title: "Queue processed",
-        description: `Successfully uploaded ${successCount} pending catches.`,
+        description: `Successfully uploaded ${successCount} pending records.`,
       });
     }
   }, [toast]);
@@ -150,7 +176,7 @@ export const useSubmitCatch = () => {
       const compressedFile = await compressDogPhoto(photoBlob);
 
       // 1. Create records in DB
-      const { data, error: rpcError } = await (supabase.rpc as unknown as (name: string, args: unknown) => Promise<{ data: CreateCatchResponse[] | null, error: { message: string } | null }>)('create_catch_event', {
+      const { data, error: rpcError } = await (supabase.rpc as unknown as (name: string, args: unknown) => Promise<{ data: CreateResponse[] | null, error: { message: string } | null }>)('create_catch_event', {
         p_sex: draft.sex,
         p_age_group: draft.age_group,
         p_condition: draft.condition,
