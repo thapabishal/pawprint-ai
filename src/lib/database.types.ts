@@ -19,6 +19,10 @@ export interface Database {
           sterilization_status: string
           visual_tags: Json
           cover_image_url: string | null
+          programme_type: string
+          vaccination_status: string
+          vaccination_date: string | null
+          next_vaccination_due: string | null
           created_at: string
           updated_at: string
         }
@@ -30,6 +34,10 @@ export interface Database {
           sterilization_status?: string
           visual_tags?: Json
           cover_image_url?: string | null
+          programme_type?: string
+          vaccination_status?: string
+          vaccination_date?: string | null
+          next_vaccination_due?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -41,6 +49,10 @@ export interface Database {
           sterilization_status?: string
           visual_tags?: Json
           cover_image_url?: string | null
+          programme_type?: string
+          vaccination_status?: string
+          vaccination_date?: string | null
+          next_vaccination_due?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -56,6 +68,9 @@ export interface Database {
           notes: string | null
           confirmed_match: boolean
           timestamp: string
+          vaccine_type: string | null
+          vaccine_batch: string | null
+          vaccinator_name: string | null
         }
         Insert: {
           id?: string
@@ -67,6 +82,9 @@ export interface Database {
           notes?: string | null
           confirmed_match?: boolean
           timestamp?: string
+          vaccine_type?: string | null
+          vaccine_batch?: string | null
+          vaccinator_name?: string | null
         }
         Update: {
           id?: string
@@ -78,6 +96,9 @@ export interface Database {
           notes?: string | null
           confirmed_match?: boolean
           timestamp?: string
+          vaccine_type?: string | null
+          vaccine_batch?: string | null
+          vaccinator_name?: string | null
         }
       }
       dog_images: {
@@ -159,6 +180,26 @@ export interface Database {
           p_lat?: number
           p_lng?: number
           p_location_accuracy?: number
+          p_handler_name?: string
+          p_notes?: string
+        }
+        Returns: {
+          dog_id: string
+          event_id: string
+        }[]
+      }
+      create_onsite_vaccination: {
+        Args: {
+          p_sex?: string
+          p_age_group?: string
+          p_condition?: string
+          p_visual_tags?: Json
+          p_lat?: number
+          p_lng?: number
+          p_location_accuracy?: number
+          p_vaccine_type?: string
+          p_vaccine_batch?: string
+          p_vaccinator_name?: string
           p_handler_name?: string
           p_notes?: string
         }

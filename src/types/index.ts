@@ -5,8 +5,11 @@ export type SterilizationStatus = 'intact' | 'sterilized' | 'unknown';
 export type EarType = 'prick' | 'semi_floppy' | 'fully_floppy' | 'cropped' | 'torn_notched';
 export type CoatColor = 'red_brown' | 'black' | 'white' | 'grey' | 'brindle' | 'mixed';
 export type Marking = 'white_chest' | 'white_paws' | 'black_mask' | 'sickle_tail' | 'curled_tail';
-export type EventType = 'catch' | 'vaccinate' | 'sterilize' | 'recover' | 'release' | 'observation';
+export type EventType = 'catch' | 'vaccinate' | 'sterilize' | 'recover' | 'release' | 'observation' | 'on_site_vaccinate';
 export type GPSStatus = 'idle' | 'requesting' | 'success' | 'failed' | 'unavailable';
+export type ProgrammeType = 'cnvr' | 'vaccination';
+export type VaccinationStatus = 'vaccinated' | 'unvaccinated' | 'unknown';
+export type VaccineType = 'rabies' | 'distemper' | 'combo' | 'booster';
 
 export interface VisualTags {
   ears?: EarType;
@@ -22,6 +25,10 @@ export interface Dog {
   sterilization_status: SterilizationStatus;
   visual_tags: VisualTags;
   cover_image_url: string | null;
+  programme_type: ProgrammeType;
+  vaccination_status: VaccinationStatus;
+  vaccination_date: string | null;
+  next_vaccination_due: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -36,6 +43,9 @@ export interface DogEvent {
   notes: string | null;
   confirmed_match: boolean;
   timestamp: string;
+  vaccine_type: VaccineType | null;
+  vaccine_batch: string | null;
+  vaccinator_name: string | null;
 }
 
 export interface GeoPoint {
@@ -104,6 +114,10 @@ export interface DogCurrentStatusView {
   catch_timestamp: string;
   catch_handler: string | null;
   catch_notes: string | null;
+  programme_type: ProgrammeType;
+  vaccination_status: VaccinationStatus;
+  vaccination_date: string | null;
+  next_vaccination_due: string | null;
 }
 
 export interface DogCNVRProgressView {
@@ -129,6 +143,14 @@ export interface DashboardStats {
   caught_in_period: number;
   vaccinated_in_period: number;
   sterilized_in_period: number;
+  cnvr_total: number;
+  cnvr_caught_period: number;
+  cnvr_sterilized_period: number;
+  cnvr_released_period: number;
+  vacc_total: number;
+  vacc_in_period: number;
+  vacc_rabies_period: number;
+  vacc_boosters_due: number;
 }
 
 export interface RecentActivityEvent extends DogEvent {

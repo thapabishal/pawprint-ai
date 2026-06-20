@@ -11,7 +11,10 @@ import type {
   SterilizationStatus,
   VisualTags,
   EventType,
-  DogEvent
+  DogEvent,
+  ProgrammeType,
+  VaccinationStatus,
+  VaccineType
 } from '@/types';
 import type { Database } from '@/lib/database.types';
 
@@ -75,7 +78,10 @@ export const useIdentify = () => {
             handler_name: item.handler_name,
             notes: item.notes,
             confirmed_match: true,
-            timestamp: item.catch_timestamp
+            timestamp: item.catch_timestamp,
+            vaccine_type: null,
+            vaccine_batch: null,
+            vaccinator_name: null
           };
 
           const dog: DogWithStatus = {
@@ -92,7 +98,11 @@ export const useIdentify = () => {
             last_updated: item.catch_timestamp,
             catch_location: null,
             images: [],
-            events: [catchEvent]
+            events: [catchEvent],
+            programme_type: 'cnvr', // Default for nearby catches which are usually CNVR
+            vaccination_status: 'unknown',
+            vaccination_date: null,
+            next_vaccination_due: null
           };
 
           return {
@@ -159,8 +169,15 @@ export const useIdentify = () => {
           events: (rawDog.events || []).map((e) => ({
             ...e,
             event_type: e.event_type as EventType,
-            location: null
-          }))
+            location: null,
+            vaccine_type: e.vaccine_type as VaccineType | null,
+            vaccine_batch: e.vaccine_batch || null,
+            vaccinator_name: e.vaccinator_name || null
+          })),
+          programme_type: rawDog.programme_type as ProgrammeType,
+          vaccination_status: rawDog.vaccination_status as VaccinationStatus,
+          vaccination_date: rawDog.vaccination_date,
+          next_vaccination_due: rawDog.next_vaccination_due
         };
 
         const result: MatchResult = {
@@ -230,8 +247,15 @@ export const useIdentify = () => {
             events: (item.events || []).map(e => ({
               ...e,
               event_type: e.event_type as EventType,
-              location: null
-            }))
+              location: null,
+              vaccine_type: e.vaccine_type as VaccineType | null,
+              vaccine_batch: e.vaccine_batch || null,
+              vaccinator_name: e.vaccinator_name || null
+            })),
+            programme_type: item.programme_type as ProgrammeType,
+            vaccination_status: item.vaccination_status as VaccinationStatus,
+            vaccination_date: item.vaccination_date,
+            next_vaccination_due: item.next_vaccination_due
           };
 
           return {
