@@ -7,6 +7,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { NetworkStatus } from '@/components/NetworkStatus';
 import { InstallPrompt } from '@/components/InstallPrompt';
 import { DashboardSkeleton } from '@/components/Skeletons';
+import { AuthProvider } from '@/contexts/AuthContext';
 
 // Lazy load pages
 const CatchPage = lazy(() => import('@/pages/CatchPage'));
@@ -29,6 +30,7 @@ const App: React.FC = () => {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
+        <AuthProvider>
         <Router>
           <div className="flex min-h-[100dvh] flex-col bg-surface overflow-hidden">
             <NetworkStatus />
@@ -148,6 +150,7 @@ const App: React.FC = () => {
             <Toaster />
           </div>
         </Router>
+      </AuthProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   );

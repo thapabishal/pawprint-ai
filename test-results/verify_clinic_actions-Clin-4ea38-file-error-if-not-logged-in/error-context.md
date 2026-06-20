@@ -6,8 +6,8 @@
 
 # Test info
 
-- Name: dashboard_v2.spec.ts >> Dashboard V2 Visual Verification
-- Location: dashboard_v2.spec.ts:3:1
+- Name: verify_clinic_actions.spec.ts >> Clinic Actions Panel >> should show profile error if not logged in
+- Location: verify_clinic_actions.spec.ts:4:3
 
 # Error details
 

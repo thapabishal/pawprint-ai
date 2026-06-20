@@ -11,7 +11,10 @@ import {
   Scissors,
   Syringe,
   PawPrint,
-  Clock
+  Clock,
+  HeartPulse,
+  XCircle,
+  AlertTriangle
 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useDog } from '@/hooks/useDog';
@@ -19,13 +22,20 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import type { DogEvent } from '@/types';
+import { useAuth } from '@/contexts/AuthContext';
+import { ClinicActionsPanel } from '@/components/clinic/ClinicActionsPanel';
+import { EventLogger } from '@/components/clinic/EventLogger';
+import type { DogEvent, EventType } from '@/types';
 
 const DogProfilePage: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { data: dog, isLoading, error } = useDog(id);
+  const { profile } = useAuth();
+  const { data: dog, isLoading, error, refetch } = useDog(id);
   const [isExpanded, setIsExpanded] = useState<Record<string, boolean>>({});
+
+  const [activeAction, setActiveAction] = useState<EventType | null>(null);
+  const [isLoggerOpen, setIsLoggerOpen] = useState(false);
 
   if (isLoading) return <ProfileSkeleton />;
   if (error || !dog) return <ProfileError error={error} />;
@@ -37,6 +47,17 @@ const DogProfilePage: React.FC = () => {
   const toggleNotes = (eventId: string) => {
     setIsExpanded(prev => ({ ...prev, [eventId]: !prev[eventId] }));
   };
+
+  const handleAction = (type: any) => {
+    setActiveAction(type);
+    setIsLoggerOpen(true);
+  };
+
+  // Determine if booster is due
+  // For now, if next_vaccination_due is within 30 days or past
+  const isBoosterDue = dog.next_vaccination_due
+    ? new Date(dog.next_vaccination_due).getTime() <= new Date().getTime() + (30 * 86400000)
+    : false;
 
   return (
     <div className="min-h-screen bg-surface pb-32">
@@ -123,7 +144,7 @@ const DogProfilePage: React.FC = () => {
               <span className="text-[13px] text-muted">Markings</span>
               <div className="flex flex-wrap justify-end gap-1.5 max-w-[60%]">
                 {dog.visual_tags?.markings && dog.visual_tags.markings.length > 0 ? (
-                  dog.visual_tags.markings.map((m) => (
+                  dog.visual_tags.markings.map((m: string) => (
                     <span key={m} className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-semibold text-primary">
                       {m.replace('_', ' ')}
                     </span>
@@ -136,6 +157,16 @@ const DogProfilePage: React.FC = () => {
           </div>
         </div>
 
+        {/* Clinic Actions Panel - Only for Clinic Vet/Admin */}
+        {profile && (profile.role === 'clinic_vet' || profile.role === 'admin') && (
+          <ClinicActionsPanel
+            dog={dog}
+            role={profile.role}
+            onAction={handleAction}
+            isBoosterDue={isBoosterDue}
+          />
+        )}
+
         {/* History Timeline */}
         <div className="mt-8">
           <h3 className="mb-4 text-[16px] font-bold text-dark">History</h3>
@@ -143,7 +174,7 @@ const DogProfilePage: React.FC = () => {
             {/* Timeline Line */}
             <div className="absolute left-[7px] top-2 bottom-2 w-0.5 bg-gradient-to-b from-primary to-gray-200" />
 
-            {dog.events.map((event) => (
+            {[...dog.events].reverse().map((event) => (
               <TimelineEvent
                 key={event.id}
                 event={event}
@@ -155,16 +186,15 @@ const DogProfilePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Release Button - Fixed Bottom */}
-      {dog.current_status !== 'release' && (
-        <div className="fixed bottom-[80px] left-0 right-0 z-40 px-4">
-          <Button
-            onClick={() => navigate(`/identify?dogId=${dog.id}`)}
-            className="h-[52px] w-full rounded-[12px] bg-[#10B981] text-[15px] font-bold text-white shadow-[0_4px_20px_rgba(16,185,129,0.35)] hover:bg-[#0da673]"
-          >
-            Release This Dog <ArrowRight size={18} className="ml-2" />
-          </Button>
-        </div>
+      {activeAction && (
+        <EventLogger
+          isOpen={isLoggerOpen}
+          onOpenChange={setIsLoggerOpen}
+          dogId={dog.id}
+          eventType={activeAction}
+          onSuccess={() => refetch()}
+          catchPhotoUrl={dog.cover_image_url}
+        />
       )}
     </div>
   );
@@ -192,14 +222,20 @@ const TraitRow = ({ label, value, swatch }: any) => (
 );
 
 const TimelineEvent = ({ event, isExpanded, onToggle }: { event: DogEvent, isExpanded: boolean, onToggle: () => void }) => {
-  const config = {
+  const configMap: Record<string, { icon: any, color: string, label: string }> = {
     catch: { icon: Activity, color: '#F59E0B', label: 'Caught' },
     vaccinate: { icon: Syringe, color: '#06B6D4', label: 'Vaccinated' },
     sterilize: { icon: Scissors, color: '#EC4899', label: 'Sterilized' },
     recover: { icon: Clock, color: '#F59E0B', label: 'Recovery' },
     release: { icon: ArrowRight, color: '#10B981', label: 'Released' },
     observation: { icon: Activity, color: '#8B5CF6', label: 'Observed' },
-  }[event.event_type as string] || { icon: Activity, color: '#6B7280', label: 'Event' };
+    treat: { icon: HeartPulse, color: '#F59E0B', label: 'Treated' },
+    died: { icon: XCircle, color: '#EF4444', label: 'Died' },
+    escaped: { icon: AlertTriangle, color: '#F59E0B', label: 'Escaped' },
+    on_site_vaccinate: { icon: Syringe, color: '#06B6D4', label: 'Field Vaccinated' },
+  };
+
+  const config = configMap[event.event_type] || configMap.catch;
 
   return (
     <div className="relative pl-7">
@@ -213,6 +249,11 @@ const TimelineEvent = ({ event, isExpanded, onToggle }: { event: DogEvent, isExp
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-1.5">
             <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: config.color }}>{config.label}</span>
+            {event.outcome && event.outcome !== 'completed' && (
+               <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500 uppercase">
+                 {event.outcome.replace('_', ' ')}
+               </span>
+            )}
           </div>
           <span className="text-[11px] font-medium text-[#9CA3AF]">
             {formatDistanceToNow(new Date(event.timestamp))} ago
