@@ -43,9 +43,9 @@ export interface DogEvent {
   notes: string | null;
   confirmed_match: boolean;
   timestamp: string;
-  vaccine_type: VaccineType | null;
-  vaccine_batch: string | null;
-  vaccinator_name: string | null;
+  vaccine_type?: VaccineType | null;
+  vaccine_batch?: string | null;
+  vaccinator_name?: string | null;
 }
 
 export interface GeoPoint {

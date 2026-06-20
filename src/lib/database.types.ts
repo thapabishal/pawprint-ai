@@ -190,22 +190,44 @@ export interface Database {
       }
       create_onsite_vaccination: {
         Args: {
-          p_sex?: string
-          p_age_group?: string
-          p_condition?: string
-          p_visual_tags?: Json
-          p_lat?: number
-          p_lng?: number
-          p_location_accuracy?: number
-          p_vaccine_type?: string
-          p_vaccine_batch?: string
-          p_vaccinator_name?: string
-          p_handler_name?: string
-          p_notes?: string
+          p_sex: string
+          p_age_group: string
+          p_condition: string
+          p_visual_tags: Json
+          p_lat: number
+          p_lng: number
+          p_location_accuracy: number
+          p_vaccine_type: string
+          p_vaccine_batch: string
+          p_vaccinator_name: string
+          p_handler_name: string
+          p_notes: string
         }
         Returns: {
           dog_id: string
           event_id: string
+        }[]
+      }
+      get_dashboard_stats: {
+        Args: {
+          since: string
+        }
+        Returns: {
+          total_registered: number
+          currently_in_clinic: number
+          released_in_period: number
+          needs_attention: number
+          caught_in_period: number
+          vaccinated_in_period: number
+          sterilized_in_period: number
+          cnvr_total: number
+          cnvr_caught_period: number
+          cnvr_sterilized_period: number
+          cnvr_released_period: number
+          vacc_total: number
+          vacc_in_period: number
+          vacc_rabies_period: number
+          vacc_boosters_due: number
         }[]
       }
     }
