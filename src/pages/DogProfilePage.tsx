@@ -525,7 +525,7 @@ const TimelineEvent = ({ event, isExpanded, onToggle }: { event: DogEvent, isExp
 
         {event.location && (
           <a
-            href={`https://maps.google.com/?q=${(event.location as any).coordinates[1]},${(event.location as any).coordinates[0]}`}
+            href={`https://maps.google.com/?q=${((event.location as unknown as { coordinates: number[] }).coordinates[1])},${((event.location as unknown as { coordinates: number[] }).coordinates[0])}`}
             target="_blank"
             rel="noopener noreferrer"
             className="mt-3 flex items-center gap-1.5 text-[13px] font-bold text-primary active:opacity-70"

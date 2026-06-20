@@ -38,16 +38,13 @@ const createCustomIcon = (dog: DogCurrentStatusView) => {
   const isReleased = dog.current_status === 'release';
   const isObservation = dog.current_status === 'observation';
 
-  let color = STATUS_COLORS.default;
-  if (isCritical) {
-    color = STATUS_COLORS.critical;
-  } else if (isObservation) {
-    color = STATUS_COLORS.observation;
-  } else if (isReleased) {
-    color = STATUS_COLORS.released;
-  } else {
-    color = STATUS_COLORS[dog.programme_type] || STATUS_COLORS.default;
-  }
+  const color = isCritical
+    ? STATUS_COLORS.critical
+    : isObservation
+      ? STATUS_COLORS.observation
+      : isReleased
+        ? STATUS_COLORS.released
+        : STATUS_COLORS[dog.programme_type as keyof typeof STATUS_COLORS] || STATUS_COLORS.default;
 
   const progColor = PROGRAMME_COLORS[dog.programme_type] || '#9CA3AF';
 
