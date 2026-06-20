@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
-import { GPS_SEARCH_RADIUS_KM, GPS_SEARCH_RADIUS_EXPANDED_KM } from '@/lib/constants';
+import { supabase } from '../lib/supabase';
+import { GPS_SEARCH_RADIUS_KM, GPS_SEARCH_RADIUS_EXPANDED_KM } from '../lib/constants';
 import type {
   GeoPoint,
   MatchResult,
@@ -13,10 +13,9 @@ import type {
   EventType,
   DogEvent,
   ProgrammeType,
-  VaccinationStatus,
   VaccineType
-} from '@/types';
-import type { Database } from '@/lib/database.types';
+} from '../types';
+import type { Database } from '../lib/database.types';
 
 type RawNearbyCatch = Database['public']['Functions']['find_nearby_catches']['Returns'][number];
 type RawDogRow = Database['public']['Tables']['dogs']['Row'];
@@ -78,10 +77,7 @@ export const useIdentify = () => {
             handler_name: item.handler_name,
             notes: item.notes,
             confirmed_match: true,
-            timestamp: item.catch_timestamp,
-            vaccine_type: null,
-            vaccine_batch: null,
-            vaccinator_name: null
+            timestamp: item.catch_timestamp
           };
 
           const dog: DogWithStatus = {
@@ -92,17 +88,17 @@ export const useIdentify = () => {
             sterilization_status: item.sterilization_status as SterilizationStatus,
             visual_tags: (item.visual_tags as unknown) as VisualTags,
             cover_image_url: item.cover_image_url,
+            programme_type: item.programme_type as ProgrammeType,
+            vaccination_status: 'unknown',
+            vaccination_date: null,
+            next_vaccination_due: null,
             created_at: item.catch_timestamp,
             updated_at: item.catch_timestamp,
             current_status: item.current_status as EventType,
             last_updated: item.catch_timestamp,
             catch_location: null,
             images: [],
-            events: [catchEvent],
-            programme_type: 'cnvr' as ProgrammeType, // Default for nearby catches in search context
-            vaccination_status: 'unknown' as VaccinationStatus,
-            vaccination_date: null,
-            next_vaccination_due: null
+            events: [catchEvent]
           };
 
           return {
@@ -160,21 +156,21 @@ export const useIdentify = () => {
           sterilization_status: rawDog.sterilization_status as SterilizationStatus,
           visual_tags: (rawDog.visual_tags as unknown) as VisualTags,
           cover_image_url: rawDog.cover_image_url,
+          programme_type: rawDog.programme_type as ProgrammeType,
+          vaccination_status: rawDog.vaccination_status as 'vaccinated' | 'unvaccinated' | 'unknown',
+          vaccination_date: rawDog.vaccination_date,
+          next_vaccination_due: rawDog.next_vaccination_due,
           created_at: rawDog.created_at,
           updated_at: rawDog.updated_at,
           current_status: current_status as EventType,
           last_updated: sortedEvents[0]?.timestamp || rawDog.updated_at,
           catch_location: null,
           images: [],
-          programme_type: rawDog.programme_type as ProgrammeType,
-          vaccination_status: rawDog.vaccination_status as VaccinationStatus,
-          vaccination_date: rawDog.vaccination_date,
-          next_vaccination_due: rawDog.next_vaccination_due,
           events: (rawDog.events || []).map((e) => ({
             ...e,
             event_type: e.event_type as EventType,
-            vaccine_type: e.vaccine_type as VaccineType | null,
-            location: null
+            location: null,
+            vaccine_type: e.vaccine_type as VaccineType | null
           }))
         };
 
@@ -236,21 +232,21 @@ export const useIdentify = () => {
             sterilization_status: item.sterilization_status as SterilizationStatus,
             visual_tags: (item.visual_tags as unknown) as VisualTags,
             cover_image_url: item.cover_image_url,
+            programme_type: item.programme_type as ProgrammeType,
+            vaccination_status: item.vaccination_status as 'vaccinated' | 'unvaccinated' | 'unknown',
+            vaccination_date: item.vaccination_date,
+            next_vaccination_due: item.next_vaccination_due,
             created_at: item.created_at,
             updated_at: item.updated_at,
             current_status: current_status as EventType,
             last_updated: sortedEvents[0]?.timestamp || item.updated_at,
             catch_location: null,
             images: [],
-            programme_type: item.programme_type as ProgrammeType,
-            vaccination_status: item.vaccination_status as VaccinationStatus,
-            vaccination_date: item.vaccination_date,
-            next_vaccination_due: item.next_vaccination_due,
             events: (item.events || []).map(e => ({
               ...e,
               event_type: e.event_type as EventType,
-              vaccine_type: e.vaccine_type as VaccineType | null,
-              location: null
+              location: null,
+              vaccine_type: e.vaccine_type as VaccineType | null
             }))
           };
 

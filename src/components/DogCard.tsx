@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { differenceInDays, isPast } from 'date-fns';
+import { differenceInDays } from 'date-fns';
 import { StatusBadge } from './StatusBadge';
 import { PawPrint } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -13,14 +13,12 @@ interface DogCardProps {
 
 export const DogCard: React.FC<DogCardProps> = ({ dog, className }) => {
   const daysInSystem = differenceInDays(new Date(), new Date(dog.registered_at));
-  const isOverdue = dog.next_vaccination_due ? isPast(new Date(dog.next_vaccination_due)) : false;
 
   return (
     <Link
       to={`/dog/${dog.dog_id}`}
       className={cn(
         'group relative aspect-[3/4] overflow-hidden rounded-[16px] bg-gray-100 shadow-card transition-all duration-300 hover:shadow-elevated md:hover:-translate-y-1',
-        dog.programme_type === 'cnvr' ? 'border-t-[3px] border-primary' : 'border-t-[3px] border-accent',
         className
       )}
     >
@@ -38,13 +36,6 @@ export const DogCard: React.FC<DogCardProps> = ({ dog, className }) => {
         </div>
       )}
 
-      {/* Overdue Booster Indicator */}
-      {isOverdue && (
-        <div className="absolute top-2 right-2 z-10" title="Booster overdue">
-          <div className="h-2 w-2 animate-pulse rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
-        </div>
-      )}
-
       {/* Gradient Overlay */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-80" />
 
@@ -59,16 +50,7 @@ export const DogCard: React.FC<DogCardProps> = ({ dog, className }) => {
           </span>
         </div>
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-             <StatusBadge status={dog.current_status} className="scale-90 origin-left" />
-             {/* Programme Badge */}
-             <span className={cn(
-               "text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-tighter",
-               dog.programme_type === 'cnvr' ? "bg-primary/20 text-primary-light border border-primary/30" : "bg-accent/20 text-accent border border-accent/30"
-             )}>
-               {dog.programme_type === 'cnvr' ? 'CNVR' : 'VAX'}
-             </span>
-          </div>
+          <StatusBadge status={dog.current_status} className="scale-90 origin-left" />
           {dog.condition === 'critical' && (
             <div className="h-2 w-2 animate-pulse rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
           )}

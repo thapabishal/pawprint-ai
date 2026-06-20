@@ -18,13 +18,16 @@ interface CatchState {
   setNotes: (notes: string) => void;
   setHandlerName: (name: string) => void;
   setProgrammeType: (type: ProgrammeType) => void;
-  setVaccineType: (type: VaccineType | null) => void;
-  initDraft: (initial?: Partial<CatchDraft>) => void;
+  setVaccineType: (type: VaccineType) => void;
+  setVaccineBatch: (batch: string) => void;
+  setVaccinatorName: (name: string) => void;
+  initDraft: () => void;
   loadSavedDraft: (draft: CatchDraft) => void;
   resetDraft: () => void;
+  resetForNextVaccination: () => void;
 }
 
-const createEmptyDraft = (overrides?: Partial<CatchDraft>): CatchDraft => ({
+const createEmptyDraft = (programmeType: ProgrammeType = 'cnvr'): CatchDraft => ({
   id: crypto.randomUUID(),
   photo_dataurl: null,
   photo_size: null,
@@ -36,11 +39,12 @@ const createEmptyDraft = (overrides?: Partial<CatchDraft>): CatchDraft => ({
   location_accuracy: null,
   notes: '',
   handler_name: '',
-  programme_type: 'cnvr',
-  vaccine_type: null,
+  programme_type: programmeType,
+  vaccine_type: 'rabies',
+  vaccine_batch: '',
+  vaccinator_name: '',
   created_at: new Date().toISOString(),
   last_saved: new Date().toISOString(),
-  ...overrides,
 });
 
 export const useCatchStore = create<CatchState>((set) => ({
@@ -87,15 +91,29 @@ export const useCatchStore = create<CatchState>((set) => ({
     set((state) => ({
       draft: { ...state.draft, handler_name: name, last_saved: new Date().toISOString() },
     })),
-  setProgrammeType: (programme_type) =>
+  setProgrammeType: (programmeType) =>
     set((state) => ({
-      draft: { ...state.draft, programme_type, last_saved: new Date().toISOString() },
+      draft: { ...state.draft, programme_type: programmeType, last_saved: new Date().toISOString() },
     })),
-  setVaccineType: (vaccine_type) =>
+  setVaccineType: (vaccineType) =>
     set((state) => ({
-      draft: { ...state.draft, vaccine_type, last_saved: new Date().toISOString() },
+      draft: { ...state.draft, vaccine_type: vaccineType, last_saved: new Date().toISOString() },
     })),
-  initDraft: (initial) => set({ draft: createEmptyDraft(initial) }),
+  setVaccineBatch: (vaccineBatch) =>
+    set((state) => ({
+      draft: { ...state.draft, vaccine_batch: vaccineBatch, last_saved: new Date().toISOString() },
+    })),
+  setVaccinatorName: (vaccinatorName) =>
+    set((state) => ({
+      draft: { ...state.draft, vaccinator_name: vaccinatorName, last_saved: new Date().toISOString() },
+    })),
+  initDraft: () => set({ draft: createEmptyDraft() }),
   loadSavedDraft: (draft) => set({ draft }),
   resetDraft: () => set({ draft: createEmptyDraft(), gpsStatus: 'idle', gpsError: null }),
+  resetForNextVaccination: () =>
+    set(() => ({
+      draft: createEmptyDraft('vaccination'),
+      gpsStatus: 'idle',
+      gpsError: null,
+    })),
 }));
