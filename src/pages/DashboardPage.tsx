@@ -24,6 +24,7 @@ import {
   ProgrammeType
 } from '@/types';
 import { exportDashboardToPDF } from '@/lib/exportService';
+import { useOverdueCount } from '@/hooks/useBoosterReminders';
 
 const StatCard: React.FC<{
   label: string;
@@ -117,12 +118,15 @@ const DashboardPage: React.FC = () => {
   const { data: stats } = useQuery({
     queryKey: ['dashboard_stats', range],
     queryFn: async () => {
+      await supabase.rpc('update_booster_statuses');
       const { data, error } = await (supabase.rpc as unknown as (name: string, args: unknown) => Promise<{ data: DashboardStats[]; error: unknown }>)('get_dashboard_stats', { since: sinceISO });
       if (error) throw error;
       return data[0] as DashboardStats;
     },
     refetchInterval: 30000,
   });
+
+  const { data: overdueCount } = useOverdueCount();
 
   const { data: pipeline } = useQuery({
     queryKey: ['cnvr_progress'],
@@ -343,19 +347,20 @@ const DashboardPage: React.FC = () => {
             {/* Booster Alert Panel */}
             <section className="bg-white rounded-[16px] border border-gray-100 shadow-sm overflow-hidden">
               <div className="p-5 border-b border-gray-50 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-[15px] font-bold text-gray-900">🔄 Upcoming Boosters</h3>
-                  {stats?.vacc_boosters_due ? (
-                    <span className="px-2 py-0.5 bg-red-100 text-red-600 text-[11px] font-black rounded-full animate-pulse">
-                      {stats.vacc_boosters_due} DUE
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-[15px] font-bold text-gray-900">🔔 Upcoming Boosters</h3>
+                    <span className="px-2.5 py-0.5 bg-amber-50 text-amber-700 text-[11px] font-bold rounded-full border border-amber-100 uppercase tracking-tight">
+                      Next 30 Days
                     </span>
+                  </div>
+                  {overdueCount && overdueCount > 0 ? (
+                    <p className="text-[12px] font-bold text-[#EF4444] flex items-center gap-1 mt-1">
+                      <AlertCircle size={14} /> {overdueCount} Overdue
+                    </p>
                   ) : null}
                 </div>
-                {boosters && boosters.length > 5 && (
-                  <Link to="/dogs?filter=boosters" className="text-[13px] font-bold text-[#0D7377] hover:underline">
-                    View all {stats?.vacc_boosters_due} →
-                  </Link>
-                )}
+
               </div>
 
               <div className="p-2">
@@ -413,7 +418,13 @@ const DashboardPage: React.FC = () => {
                 )}
               </div>
 
-              <div className="p-4 border-t border-gray-50">
+              <div className="p-4 border-t border-gray-50 flex flex-col gap-2">
+                <button
+                  onClick={() => navigate('/reminders')}
+                  className="w-full py-2.5 rounded-[12px] bg-gray-50 text-gray-900 text-[13px] font-bold hover:bg-gray-100 transition-colors flex items-center justify-center gap-2"
+                >
+                  View All Reminders <ChevronRight size={14} />
+                </button>
                 <button
                   onClick={() => navigate('/catch', { state: { defaultProgramme: 'vaccination', defaultVaccineType: 'booster' } })}
                   className="w-full py-2.5 rounded-[12px] border-2 border-[#0D7377] text-[#0D7377] text-[13px] font-bold hover:bg-[#0D737708] transition-colors"
