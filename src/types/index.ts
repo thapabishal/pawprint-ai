@@ -154,10 +154,14 @@ export interface DashboardStats {
   vacc_in_period: number;
   vacc_rabies_period: number;
   vacc_boosters_due: number;
+  vacc_distemper_period: number;
+  vacc_combo_period: number;
+  vacc_booster_period: number;
 }
 
 export interface RecentActivityEvent extends DogEvent {
   dogs: {
     cover_image_url: string | null;
+    programme_type: ProgrammeType;
   } | null;
 }
