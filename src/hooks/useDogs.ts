@@ -40,7 +40,7 @@ export function useDogs(
 
       // Apply Search Filter (if provided)
       if (filters.search) {
-        query = query.or(`dog_id.ilike.%${filters.search}%,last_notes.ilike.%${filters.search}%`);
+        query = query.or(`dog_id.ilike.%${filters.search}%,last_notes.ilike.%${filters.search}%,catch_notes.ilike.%${filters.search}%`);
       }
 
       // Apply Sorting
