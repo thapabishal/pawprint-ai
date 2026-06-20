@@ -11,7 +11,10 @@ import type {
   SterilizationStatus,
   VisualTags,
   EventType,
-  DogEvent
+  DogEvent,
+  ProgrammeType,
+  VaccinationStatus,
+  VaccineType
 } from '@/types';
 import type { Database } from '@/lib/database.types';
 
@@ -92,7 +95,11 @@ export const useIdentify = () => {
             last_updated: item.catch_timestamp,
             catch_location: null,
             images: [],
-            events: [catchEvent]
+            events: [catchEvent],
+            programme_type: 'cnvr' as ProgrammeType, // Default for nearby catches in search context
+            vaccination_status: 'unknown' as VaccinationStatus,
+            vaccination_date: null,
+            next_vaccination_due: null
           };
 
           return {
@@ -156,9 +163,14 @@ export const useIdentify = () => {
           last_updated: sortedEvents[0]?.timestamp || rawDog.updated_at,
           catch_location: null,
           images: [],
+          programme_type: rawDog.programme_type as ProgrammeType,
+          vaccination_status: rawDog.vaccination_status as VaccinationStatus,
+          vaccination_date: rawDog.vaccination_date,
+          next_vaccination_due: rawDog.next_vaccination_due,
           events: (rawDog.events || []).map((e) => ({
             ...e,
             event_type: e.event_type as EventType,
+            vaccine_type: e.vaccine_type as VaccineType | null,
             location: null
           }))
         };
@@ -227,9 +239,14 @@ export const useIdentify = () => {
             last_updated: sortedEvents[0]?.timestamp || item.updated_at,
             catch_location: null,
             images: [],
+            programme_type: item.programme_type as ProgrammeType,
+            vaccination_status: item.vaccination_status as VaccinationStatus,
+            vaccination_date: item.vaccination_date,
+            next_vaccination_due: item.next_vaccination_due,
             events: (item.events || []).map(e => ({
               ...e,
               event_type: e.event_type as EventType,
+              vaccine_type: e.vaccine_type as VaccineType | null,
               location: null
             }))
           };
