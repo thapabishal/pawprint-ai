@@ -1,53 +1,41 @@
 import React from 'react';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 import type { EventType } from '@/types';
 
 interface StatusBadgeProps {
   status: EventType | string;
   className?: string;
-  variant?: 'solid' | 'outline' | 'subtle';
 }
 
-const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
-  catch: { label: 'Caught', color: 'text-white', bg: 'bg-[#F59E0B]' },
-  vaccinate: { label: 'Vaccinated', color: 'text-white', bg: 'bg-[#06B6D4]' },
-  sterilize: { label: 'Sterilized', color: 'text-white', bg: 'bg-[#EC4899]' },
-  release: { label: 'Released', color: 'text-white', bg: 'bg-[#10B981]' },
-  observation: { label: 'Observation', color: 'text-white', bg: 'bg-[#8B5CF6]' },
-  recover: { label: 'In Recovery', color: 'text-white', bg: 'bg-[#F59E0B]' },
-  critical: { label: 'Critical', color: 'text-white', bg: 'bg-[#EF4444]' },
-  unknown: { label: 'Unknown', color: 'text-slate-500', bg: 'bg-slate-100' },
+const statusMap: Record<string, { label: string; color: string; bg: string }> = {
+  catch: { label: 'In Clinic', color: 'text-orange-600', bg: 'bg-orange-50' },
+  vaccinate: { label: 'Vaccinated', color: 'text-cyan-600', bg: 'bg-cyan-50' },
+  on_site_vaccinate: { label: 'Field Vaccinated', color: 'text-amber-600', bg: 'bg-amber-50' },
+  sterilize: { label: 'Sterilized', color: 'text-pink-600', bg: 'bg-pink-50' },
+  recover: { label: 'Recovery', color: 'text-orange-600', bg: 'bg-orange-50' },
+  release: { label: 'Released', color: 'text-green-600', bg: 'bg-green-50' },
+  observation: { label: 'Observation', color: 'text-slate-600', bg: 'bg-slate-50' },
 };
 
-export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, className, variant = 'solid' }) => {
-  const config = statusConfig[status as string] || statusConfig.unknown;
-
-  if (variant === 'subtle') {
-    return (
-      <span
-        className={cn(
-          'inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider shadow-sm',
-          config.bg.replace('bg-', 'bg-opacity-15 text-'),
-          className
-        )}
-        style={{ color: config.bg.replace('bg-[', '').replace(']', '') }}
-      >
-        {config.label}
-      </span>
-    );
-  }
+export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, className }) => {
+  const config = statusMap[status] || { label: status, color: 'text-gray-600', bg: 'bg-gray-50' };
 
   return (
-    <Badge
+    <motion.div
+      whileHover={{ scale: 1.05 }}
       className={cn(
-        'border-none font-semibold text-[10px] px-2 py-0.5 rounded-full shadow-sm',
+        'inline-flex items-center rounded-full px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest border border-current opacity-90 transition-all',
         config.bg,
         config.color,
         className
       )}
     >
+      <span className="relative flex h-1.5 w-1.5 mr-2">
+        <span className={cn("animate-ping absolute inline-flex h-full w-full rounded-full opacity-75", config.color.replace('text', 'bg'))}></span>
+        <span className={cn("relative inline-flex rounded-full h-1.5 w-1.5", config.color.replace('text', 'bg'))}></span>
+      </span>
       {config.label}
-    </Badge>
+    </motion.div>
   );
 };

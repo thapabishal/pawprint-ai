@@ -2,77 +2,91 @@ import React from 'react';
 import { useCatchStore } from '../../stores/catchStore';
 import type { Sex, AgeGroup, Condition } from '../../types';
 import { cn } from '../../lib/utils';
+import { motion } from 'framer-motion';
 
 interface OptionProps<T> {
   label: string;
   sublabel?: string;
-  emoji: string;
+  icon: React.ReactNode;
   value: T;
   isSelected: boolean;
   onClick: (value: T) => void;
   isCritical?: boolean;
+  isVaccination?: boolean;
 }
 
 function SelectorOption<T extends string>({
   label,
   sublabel,
-  emoji,
+  icon,
   value,
   isSelected,
   onClick,
   isCritical,
+  isVaccination,
 }: OptionProps<T>) {
   return (
-    <button
+    <motion.button
+      whileTap={{ scale: 0.96 }}
       onClick={() => onClick(value)}
       className={cn(
-        "flex-1 flex flex-col items-center justify-center min-h-[64px] rounded-[12px] border-[1.5px] transition-all duration-150 active:scale-[0.96]",
+        "flex-1 flex flex-col items-center justify-center min-h-[72px] rounded-[18px] border-[1.5px] transition-all duration-300 px-2 relative overflow-hidden",
         isSelected
           ? (isCritical
-              ? "bg-[#FEE2E2] border-[#EF4444] text-[#EF4444]"
-              : "bg-[#E6F7F6] border-[#0D7377] text-[#0D7377]")
+              ? "bg-red-50 border-red-500 text-red-600 shadow-sm"
+              : isVaccination
+                ? "bg-accent/10 border-accent text-accent shadow-sm"
+                : "bg-primary/10 border-primary text-primary shadow-sm")
           : (isCritical
-              ? "bg-[#FFF5F5] border-[#FECACA] text-[#374151] hover:bg-[#FEE2E2]/50"
-              : "bg-white border-[#E5E7EB] text-[#374151] hover:bg-[#F9FAFB] hover:border-[#D1D5DB]")
+              ? "bg-white border-red-100 text-body hover:border-red-200"
+              : "bg-white border-border text-body hover:border-muted")
       )}
     >
-      <span className="text-[22px] mb-0.5">{emoji}</span>
-      <span className={cn("text-[12px] font-medium leading-none", isSelected ? "text-inherit" : "text-[#374151]")}>{label}</span>
-      {sublabel && (
-        <span className={cn("text-[10px] mt-0.5 leading-none", isSelected ? "text-inherit/80" : "text-[#9CA3AF]")}>
-          {sublabel}
-        </span>
+      {isSelected && (
+        <motion.div
+          layoutId={`vitals-bg-${label}`}
+          className="absolute inset-0 z-0 bg-current opacity-[0.03]"
+        />
       )}
-    </button>
+      <div className="relative z-10 flex flex-col items-center">
+        <span className="text-[20px] mb-1">{icon}</span>
+        <span className={cn("text-[11px] font-bold leading-none uppercase tracking-wide", isSelected ? "text-inherit" : "text-body")}>{label}</span>
+        {sublabel && (
+          <span className={cn("text-[9px] mt-1 leading-none font-medium", isSelected ? "text-inherit/80" : "text-muted")}>
+            {sublabel}
+          </span>
+        )}
+      </div>
+    </motion.button>
   );
 }
 
 export const VitalsSelector: React.FC = () => {
   const { draft, setSex, setAgeGroup, setCondition } = useCatchStore();
-  const { sex, age_group: ageGroup, condition } = draft;
+  const { sex, age_group: ageGroup, condition, programme_type } = draft;
+  const isVaccination = programme_type === 'vaccination';
 
-  const sexOptions: { label: string; emoji: string; value: Sex }[] = [
-    { label: 'Male', emoji: '♂️', value: 'male' },
-    { label: 'Female', emoji: '♀️', value: 'female' },
-    { label: 'Unknown', emoji: '❓', value: 'unknown' },
+  const sexOptions: { label: string; icon: string; value: Sex }[] = [
+    { label: 'Male', icon: '♂️', value: 'male' },
+    { label: 'Female', icon: '♀️', value: 'female' },
+    { label: 'Unknown', icon: '❓', value: 'unknown' },
   ];
 
-  const ageOptions: { label: string; sublabel?: string; emoji: string; value: AgeGroup }[] = [
-    { label: 'Puppy', sublabel: '< 6 mo', emoji: '🍼', value: 'puppy' },
-    { label: 'Adult', sublabel: '1-7 yrs', emoji: '🐕', value: 'adult' },
-    { label: 'Senior', sublabel: '8+ yrs', emoji: '👵', value: 'senior' },
+  const ageOptions: { label: string; sublabel?: string; icon: string; value: AgeGroup }[] = [
+    { label: 'Puppy', sublabel: '< 6 mo', icon: '🍼', value: 'puppy' },
+    { label: 'Adult', sublabel: '1-7 yrs', icon: '🐕', value: 'adult' },
+    { label: 'Senior', sublabel: '8+ yrs', icon: '👵', value: 'senior' },
   ];
 
-  const conditionOptions: { label: string; emoji: string; value: Condition; isCritical?: boolean }[] = [
-    { label: 'Healthy', emoji: '✅', value: 'healthy' },
-    { label: 'Injured', emoji: '🩹', value: 'injured' },
-    { label: 'Critical', emoji: '🚨', value: 'critical', isCritical: true },
+  const conditionOptions: { label: string; icon: string; value: Condition; isCritical?: boolean }[] = [
+    { label: 'Healthy', icon: '✅', value: 'healthy' },
+    { label: 'Injured', icon: '🩹', value: 'injured' },
+    { label: 'Critical', icon: '🚨', value: 'critical', isCritical: true },
   ];
 
   return (
-    <div className="w-full space-y-6 px-4 py-2">
-      <div className="space-y-2">
-        <label className="text-[12px] font-semibold text-[#6B7280] uppercase tracking-wider">Sex</label>
+    <div className="w-full space-y-6">
+      <Section title="Sex">
         <div className="flex gap-2">
           {sexOptions.map((opt) => (
             <SelectorOption
@@ -80,13 +94,13 @@ export const VitalsSelector: React.FC = () => {
               {...opt}
               isSelected={sex === opt.value}
               onClick={setSex}
+              isVaccination={isVaccination}
             />
           ))}
         </div>
-      </div>
+      </Section>
 
-      <div className="space-y-2">
-        <label className="text-[12px] font-semibold text-[#6B7280] uppercase tracking-wider">Age Group</label>
+      <Section title="Age Group">
         <div className="flex gap-2">
           {ageOptions.map((opt) => (
             <SelectorOption
@@ -94,13 +108,13 @@ export const VitalsSelector: React.FC = () => {
               {...opt}
               isSelected={ageGroup === opt.value}
               onClick={setAgeGroup}
+              isVaccination={isVaccination}
             />
           ))}
         </div>
-      </div>
+      </Section>
 
-      <div className="space-y-2">
-        <label className="text-[12px] font-semibold text-[#6B7280] uppercase tracking-wider">Condition</label>
+      <Section title="Condition">
         <div className="flex gap-2">
           {conditionOptions.map((opt) => (
             <SelectorOption
@@ -108,10 +122,18 @@ export const VitalsSelector: React.FC = () => {
               {...opt}
               isSelected={condition === opt.value}
               onClick={setCondition}
+              isVaccination={isVaccination}
             />
           ))}
         </div>
-      </div>
+      </Section>
     </div>
   );
 };
+
+const Section = ({ title, children }: { title: string, children: React.ReactNode }) => (
+  <div className="space-y-3 px-5">
+    <label className="text-[11px] font-extrabold text-muted uppercase tracking-[0.15em] ml-1">{title}</label>
+    {children}
+  </div>
+);
