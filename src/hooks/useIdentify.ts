@@ -78,7 +78,10 @@ export const useIdentify = () => {
             handler_name: item.handler_name,
             notes: item.notes,
             confirmed_match: true,
-            timestamp: item.catch_timestamp
+            timestamp: item.catch_timestamp,
+            vaccine_type: null,
+            vaccine_batch: null,
+            vaccinator_name: null
           };
 
           const dog: DogWithStatus = {
