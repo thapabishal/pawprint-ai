@@ -16,7 +16,6 @@ export const exportService = {
   async generateDashboardPDF(data: ExportData) {
     const { stats, range, boosters } = data;
 
-    // Safety check for stats
     if (!stats) throw new Error("Missing statistics for report generation");
 
     const doc = new jsPDF({
@@ -31,30 +30,26 @@ export const exportService = {
     const grayColor = [107, 114, 128]; // #6B7280
     const lightBg = [249, 250, 251];   // #F9FAFB
 
-    // --- HELPER: DRAW LOGO ICON ---
-    const drawLogo = (x: number, y: number) => {
-      doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-      doc.circle(x, y, 6, 'F');
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(10);
-      doc.text('P', x - 1.5, y + 1.5);
-    };
-
     // --- HEADER ---
     doc.setFillColor(darkColor[0], darkColor[1], darkColor[2]);
     doc.rect(0, 0, 210, 50, 'F');
 
-    drawLogo(25, 22);
+    // Logo Placeholder
+    doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+    doc.circle(25, 22, 6, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('P', 23.5, 23.5);
 
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(26);
-    doc.setFont('helvetica', 'bold');
     doc.text('PawPrint AI', 35, 26);
 
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(156, 163, 175);
-    doc.text('Intelligent Community Dog Monitoring Report', 35, 33);
+    doc.text('INTELLIGENT COMMUNITY DOG MONITORING REPORT', 35, 33);
 
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(8);
@@ -154,7 +149,7 @@ export const exportService = {
     doc.line(25, y + 5, 25, y + 15);
 
     doc.setTextColor(accentColor[0], accentColor[1], accentColor[2]);
-    doc.text('FIELD VACCINATION & BOOSTER CAMPS', 30, y + 11);
+    doc.text('FIELD VACCINATION AND BOOSTER CAMPS', 30, y + 11);
 
     const vStats = [
       { l: 'Covered', v: stats.vacc_total || 0 },
@@ -172,21 +167,28 @@ export const exportService = {
       doc.text(s.l, 30 + (i * 40), y + 34);
     });
 
-    // Vaccine Breakdown Bars
-    const maxV = Math.max(stats.vacc_rabies_period || 0, stats.vacc_distemper_period || 0, stats.vacc_combo_period || 0, 1);
-    const vColors = [[240, 165, 0], [59, 130, 246], [139, 92, 246]];
-    const bStats = [
+    // Vaccine Breakdown Bars (4 bars)
+    const maxV = Math.max(
+      stats.vacc_rabies_period || 0,
+      stats.vacc_distemper_period || 0,
+      stats.vacc_combo_period || 0,
+      stats.vacc_booster_period || 0,
+      1
+    );
+    const vColorsList = [[240, 165, 0], [59, 130, 246], [139, 92, 246], [16, 185, 129]];
+    const bStatsList = [
       { l: 'Rabies', v: stats.vacc_rabies_period || 0 },
       { l: 'Distemper', v: stats.vacc_distemper_period || 0 },
-      { l: 'Combo', v: stats.vacc_combo_period || 0 }
+      { l: 'Combo', v: stats.vacc_combo_period || 0 },
+      { l: 'Booster', v: stats.vacc_booster_period || 0 }
     ];
 
-    bStats.forEach((s, i) => {
-      const bW = (s.v / maxV) * 40;
-      doc.setFillColor(vColors[i][0], vColors[i][1], vColors[i][2]);
-      doc.rect(30 + (i * 50), y + 42, bW, 2, 'F');
+    bStatsList.forEach((s, i) => {
+      const bW = (s.v / maxV) * 35;
+      doc.setFillColor(vColorsList[i][0], vColorsList[i][1], vColorsList[i][2]);
+      doc.rect(30 + (i * 40), y + 42, bW, 2, 'F');
       doc.setFontSize(5);
-      doc.text(s.l, 30 + (i * 50), y + 46);
+      doc.text(s.l, 30 + (i * 40), y + 46);
     });
 
     y += 65;
@@ -238,7 +240,7 @@ export const exportService = {
       doc.line(20, 282, 190, 282);
       doc.setFontSize(7);
       doc.setTextColor(156, 163, 175);
-      doc.text('PawPrint AI Operations Monitoring - Confidential Record', 105, 288, { align: 'center' });
+      doc.text('PAWPRINT AI OPERATIONS MONITORING - CONFIDENTIAL RECORD', 105, 288, { align: 'center' });
       doc.text(`PAGE ${i} / ${pageCount}`, 190, 288, { align: 'right' });
     }
 
