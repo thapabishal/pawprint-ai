@@ -17,6 +17,7 @@ const statusConfig: Record<string, { label: string; color: string; bg: string }>
   observation: { label: 'Observation', color: 'text-white', bg: 'bg-[#8B5CF6]' },
   recover: { label: 'In Recovery', color: 'text-white', bg: 'bg-[#F59E0B]' },
   critical: { label: 'Critical', color: 'text-white', bg: 'bg-[#EF4444]' },
+  on_site_vaccinate: { label: 'Vaccinated On-Site', color: 'text-white', bg: 'bg-[#F0A500]' },
   unknown: { label: 'Unknown', color: 'text-slate-500', bg: 'bg-slate-100' },
 };
 

@@ -70,6 +70,9 @@ export interface Database {
           vaccine_batch: string | null
           vaccinator_name: string | null
           timestamp: string
+          vaccine_type: string | null
+          vaccine_batch: string | null
+          vaccinator_name: string | null
         }
         Insert: {
           id?: string
@@ -84,6 +87,9 @@ export interface Database {
           vaccine_batch?: string | null
           vaccinator_name?: string | null
           timestamp?: string
+          vaccine_type?: string | null
+          vaccine_batch?: string | null
+          vaccinator_name?: string | null
         }
         Update: {
           id?: string
@@ -98,6 +104,9 @@ export interface Database {
           vaccine_batch?: string | null
           vaccinator_name?: string | null
           timestamp?: string
+          vaccine_type?: string | null
+          vaccine_batch?: string | null
+          vaccinator_name?: string | null
         }
       }
       dog_images: {
@@ -215,18 +224,18 @@ export interface Database {
       }
       create_onsite_vaccination: {
         Args: {
-          p_sex?: string
-          p_age_group?: string
-          p_condition?: string
-          p_visual_tags?: Json
-          p_lat?: number
-          p_lng?: number
-          p_location_accuracy?: number
-          p_vaccine_type?: string
-          p_vaccine_batch?: string
-          p_vaccinator_name?: string
-          p_handler_name?: string
-          p_notes?: string
+          p_sex: string
+          p_age_group: string
+          p_condition: string
+          p_visual_tags: Json
+          p_lat: number
+          p_lng: number
+          p_location_accuracy: number
+          p_vaccine_type: string
+          p_vaccine_batch: string
+          p_vaccinator_name: string
+          p_handler_name: string
+          p_notes: string
         }
         Returns: {
           dog_id: string
@@ -235,7 +244,7 @@ export interface Database {
       }
       get_dashboard_stats: {
         Args: {
-          since?: string
+          since: string
         }
         Returns: {
           total_registered: number

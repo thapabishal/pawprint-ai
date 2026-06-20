@@ -8,6 +8,7 @@ export type Marking = 'white_chest' | 'white_paws' | 'black_mask' | 'sickle_tail
 export type EventType = 'catch' | 'vaccinate' | 'sterilize' | 'recover' | 'release' | 'observation' | 'on_site_vaccinate';
 export type GPSStatus = 'idle' | 'requesting' | 'success' | 'failed' | 'unavailable';
 export type ProgrammeType = 'cnvr' | 'vaccination';
+export type VaccinationStatus = 'vaccinated' | 'unvaccinated' | 'unknown';
 export type VaccineType = 'rabies' | 'distemper' | 'combo' | 'booster';
 
 export interface VisualTags {
@@ -25,7 +26,7 @@ export interface Dog {
   visual_tags: VisualTags;
   cover_image_url: string | null;
   programme_type: ProgrammeType;
-  vaccination_status: 'vaccinated' | 'unvaccinated' | 'unknown';
+  vaccination_status: VaccinationStatus;
   vaccination_date: string | null;
   next_vaccination_due: string | null;
   created_at: string;
@@ -45,6 +46,9 @@ export interface DogEvent {
   vaccine_batch?: string | null;
   vaccinator_name?: string | null;
   timestamp: string;
+  vaccine_type?: VaccineType | null;
+  vaccine_batch?: string | null;
+  vaccinator_name?: string | null;
 }
 
 export interface GeoPoint {
@@ -121,6 +125,10 @@ export interface DogCurrentStatusView {
   catch_timestamp: string;
   catch_handler: string | null;
   catch_notes: string | null;
+  programme_type: ProgrammeType;
+  vaccination_status: VaccinationStatus;
+  vaccination_date: string | null;
+  next_vaccination_due: string | null;
 }
 
 export interface DogCNVRProgressView {
