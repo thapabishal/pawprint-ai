@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ChevronLeft,
@@ -10,55 +10,51 @@ import {
   Activity,
   Scissors,
   Syringe,
-  Clock,
-  AlertTriangle,
-  Phone,
-  Check
+  PawPrint,
+  Clock
 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { useDog } from '@/hooks/useDog';
-import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/StatusBadge';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import type { DogWithStatus, DogEvent, CoatColor } from '@/types';
+import type { DogEvent } from '@/types';
 
 const DogProfilePage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id } = useParams();
   const navigate = useNavigate();
   const { data: dog, isLoading, error } = useDog(id);
   const [isExpanded, setIsExpanded] = useState<Record<string, boolean>>({});
-  const [now, setNow] = useState<number>(0);
-
-  useEffect(() => {
-    setTimeout(() => setNow(Date.now()), 0);
-  }, []);
 
   if (isLoading) return <ProfileSkeleton />;
   if (error || !dog) return <ProfileError error={error} />;
 
+  const daysInSystem = Math.floor(
+    (new Date().getTime() - new Date(dog.created_at).getTime()) / (1000 * 60 * 60 * 24)
+  );
+
   const toggleNotes = (eventId: string) => {
-    setIsExpanded((prev) => ({ ...prev, [eventId]: !prev[eventId] }));
+    setIsExpanded(prev => ({ ...prev, [eventId]: !prev[eventId] }));
   };
 
-  const catchTimestamp = dog.events.find(e => e.event_type === 'catch' || e.event_type === 'on_site_vaccinate')?.timestamp || dog.created_at;
-  const daysInSystem = now > 0 ? Math.floor((now - new Date(catchTimestamp).getTime()) / 86400000) : 0;
-
   return (
-    <div className="min-h-screen bg-[#F8FAFC] pb-24">
-      {/* Hero Image Section */}
-      <div className="relative h-[280px] w-full overflow-hidden">
+    <div className="min-h-screen bg-surface pb-32">
+      {/* Hero Section */}
+      <div className="relative h-[260px] w-full overflow-hidden bg-gray-200">
         {dog.cover_image_url ? (
           <img
             src={dog.cover_image_url}
-            alt="Dog profile"
-            className="h-full w-full object-cover"
+            alt="Dog Hero"
+            className="h-full w-full object-cover object-top"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-slate-200">
-            <Activity size={48} className="text-slate-400" />
+          <div className="flex h-full w-full items-center justify-center bg-gray-100 text-gray-300">
+            <PawPrint size={80} strokeWidth={1} />
           </div>
         )}
+
+        {/* Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
 
         {/* Top Controls */}
@@ -87,8 +83,25 @@ const DogProfilePage: React.FC = () => {
 
       {/* Profile Card Overlay */}
       <div className="relative -mt-7 rounded-t-[20px] bg-white px-4 pt-5 pb-6 shadow-elevated">
-        {/* Status Panel (Task 4 Upgrade) */}
-        <StatusPanel dog={dog} daysInSystem={daysInSystem} now={now} />
+        {/* Stats Row */}
+        <div className="flex gap-2.5">
+          <StatPill
+            icon={<Activity size={16} />}
+            label="Condition"
+            value={dog.condition.charAt(0).toUpperCase() + dog.condition.slice(1)}
+            valueClass={dog.condition === 'critical' ? 'text-red-500' : 'text-primary'}
+          />
+          <StatPill
+            icon={<User size={16} />}
+            label="Sex / Age"
+            value={`${dog.sex === 'male' ? 'M' : dog.sex === 'female' ? 'F' : '?'} • ${dog.age_group.charAt(0).toUpperCase()}`}
+          />
+          <StatPill
+            icon={<Scissors size={16} />}
+            label="Sterilized"
+            value={dog.sterilization_status === 'sterilized' ? 'Yes' : 'No'}
+          />
+        </div>
 
         {/* Physical Traits Card */}
         <div className="mt-6 rounded-[16px] border border-border bg-white p-4 shadow-card">
@@ -141,311 +154,32 @@ const DogProfilePage: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
-  );
-};
 
-// --- Sub-components ---
-
-const StatusPanel = ({ dog, daysInSystem, now }: { dog: DogWithStatus, daysInSystem: number, now: number }) => {
-  return (
-    <div className="space-y-6">
-      <ProgrammeIdentityCard dog={dog} now={now} />
-      <KeyNumbersRow dog={dog} daysInSystem={daysInSystem} />
-      <QuickActionsRow dog={dog} />
-      {dog.programme_type === 'cnvr' && <CNVRPipelineMiniView dog={dog} />}
-    </div>
-  );
-};
-
-const ProgrammeIdentityCard = ({ dog, now }: { dog: DogWithStatus, now: number }) => {
-  const isCNVR = dog.programme_type === 'cnvr';
-
-  if (isCNVR) {
-    const hasRelease = dog.events.some(e => e.event_type === 'release');
-    const hasSterilize = dog.events.some(e => e.event_type === 'sterilize');
-
-    let subtitle = "Caught — awaiting clinic";
-    let subtitleColor = "text-muted";
-
-    if (hasRelease) {
-      subtitle = "Released ✓";
-      subtitleColor = "text-emerald-500";
-    } else if (hasSterilize) {
-      subtitle = "In Clinic — post-surgery recovery";
-    }
-
-    return (
-      <div className="relative overflow-hidden rounded-[16px] bg-[#F0FDFA] p-4 flex gap-4">
-        <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#0D7377]" />
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-sm">
-          <Scissors size={24} className="text-[#0D7377]" />
-        </div>
-        <div className="flex flex-col justify-center">
-          <h4 className="text-[14px] font-bold text-[#0D7377]">CNVR Programme</h4>
-          <p className={cn("text-[13px] font-medium", subtitleColor)}>{subtitle}</p>
-        </div>
-
-        {/* Stage progress dots */}
-        <div className="ml-auto flex items-center gap-1.5 self-center">
-          {[
-            { label: 'C', done: true, current: false },
-            { label: 'N', done: hasSterilize, current: !hasSterilize && !hasRelease },
-            { label: 'V', done: dog.events.some(e => e.event_type === 'vaccinate' || e.event_type === 'on_site_vaccinate'), current: false },
-            { label: 'R', done: hasRelease, current: false }
-          ].map((dot, idx, arr) => (
-            <React.Fragment key={idx}>
-              <div className={cn(
-                "h-2 w-2 rounded-full",
-                dot.done ? "bg-[#0D7377]" : dot.current ? "bg-[#0D7377] ring-2 ring-[#0D7377]/20 animate-pulse" : "bg-gray-300"
-              )}>
-                {dot.current && <div className="h-1 w-1 bg-white rounded-full m-0.5" />}
-              </div>
-              {idx < arr.length - 1 && <div className="w-2 h-px bg-gray-200" />}
-            </React.Fragment>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  // Vaccination Programme
-  const daysUntilBooster = dog.next_vaccination_due && now > 0
-    ? Math.ceil((new Date(dog.next_vaccination_due).getTime() - now) / 86400000)
-    : null;
-  const isOverdue = daysUntilBooster !== null && daysUntilBooster < 0;
-
-  // Find phone number in notes
-  const phoneRegex = /\+977[- ]?[0-9]{9,10}/;
-  const noteWithPhone = dog.events.find(e => e.notes && phoneRegex.test(e.notes))?.notes;
-  const phoneNumber = noteWithPhone?.match(phoneRegex)?.[0];
-
-  return (
-    <div className="relative overflow-hidden rounded-[16px] bg-[#FFFBEB] p-4 flex gap-4">
-      <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#F0A500]" />
-      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-sm">
-        <Syringe size={24} className="text-[#F0A500]" />
-      </div>
-      <div className="flex flex-col justify-center flex-1">
-        <h4 className="text-[14px] font-bold text-[#92400E]">Vaccination Programme</h4>
-        <p className="text-[13px] font-medium text-muted">
-          {dog.vaccination_status === 'vaccinated' && dog.vaccination_date ? `Vaccinated on ${format(new Date(dog.vaccination_date), 'MMM d')}` : 'Not vaccinated'}
-        </p>
-      </div>
-
-      {daysUntilBooster !== null && (
-        <div className="flex items-center gap-3">
-          {isOverdue ? (
-            <div className="flex flex-col items-end">
-              <div className="flex items-center gap-1 text-red-500 font-bold text-[13px] animate-pulse">
-                <AlertTriangle size={14} />
-                <span>Overdue by {Math.abs(daysUntilBooster)}d</span>
-              </div>
-              {phoneNumber && (
-                <a href={`tel:${phoneNumber}`} className="mt-1 flex items-center gap-1 text-[11px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-                  <Phone size={10} /> Contact caretaker
-                </a>
-              )}
-            </div>
-          ) : (
-            <div className="relative h-12 w-12 flex items-center justify-center">
-               <svg className="h-12 w-12 -rotate-90 transform">
-                <circle
-                  cx="24"
-                  cy="24"
-                  r="20"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  fill="transparent"
-                  className="text-gray-200"
-                />
-                <circle
-                  cx="24"
-                  cy="24"
-                  r="20"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  fill="transparent"
-                  strokeDasharray={125.6}
-                  strokeDashoffset={125.6 * (1 - Math.min(1, (365 - daysUntilBooster) / 365))}
-                  className={cn(
-                    daysUntilBooster > 60 ? "text-emerald-500" : daysUntilBooster > 30 ? "text-amber-500" : "text-red-500"
-                  )}
-                />
-              </svg>
-              <div className="absolute flex flex-col items-center">
-                <span className="text-[13px] font-bold leading-none">{daysUntilBooster}</span>
-                <span className="text-[8px] font-medium text-muted">days</span>
-              </div>
-            </div>
-          )}
+      {/* Release Button - Fixed Bottom */}
+      {dog.current_status !== 'release' && (
+        <div className="fixed bottom-[80px] left-0 right-0 z-40 px-4">
+          <Button
+            onClick={() => navigate(`/identify?dogId=${dog.id}`)}
+            className="h-[52px] w-full rounded-[12px] bg-[#10B981] text-[15px] font-bold text-white shadow-[0_4px_20px_rgba(16,185,129,0.35)] hover:bg-[#0da673]"
+          >
+            Release This Dog <ArrowRight size={18} className="ml-2" />
+          </Button>
         </div>
       )}
     </div>
   );
 };
 
-const KeyNumbersRow = ({ dog, daysInSystem }: { dog: DogWithStatus, daysInSystem: number }) => {
-  const isCNVR = dog.programme_type === 'cnvr';
-  const hasGPS = dog.events.some(e => e.location_accuracy !== null);
-  const bestAccuracy = dog.events.some(e => e.location_accuracy !== null)
-    ? Math.min(...dog.events.map(e => e.location_accuracy).filter(a => a !== null) as number[])
-    : null;
-
-  return (
-    <div className="flex items-stretch rounded-xl border border-border bg-white py-3">
-      <KeyNumberItem
-        label="Days"
-        value={daysInSystem.toString()}
-        subtext={`Caught ${formatDistanceToNow(new Date(dog.events.find(e => e.event_type === 'catch' || e.event_type === 'on_site_vaccinate')?.timestamp || dog.created_at))} ago`}
-      />
-      <KeyNumberItem
-        label="Events"
-        value={dog.events.length.toString()}
-      />
-      {isCNVR ? (
-        <KeyNumberItem
-          label="Surgery"
-          value={dog.sterilization_status === 'sterilized' ? 'Neutered' : 'Intact'}
-          icon={dog.sterilization_status === 'sterilized' ? <Scissors size={14} className="text-[#065F46]" /> : <Scissors size={14} className="text-[#9CA3AF]" />}
-          valueClass={dog.sterilization_status === 'sterilized' ? 'text-[#065F46]' : 'text-[#9CA3AF]'}
-        />
-      ) : (
-        <KeyNumberItem
-          label="Vaccination"
-          value={dog.vaccination_status === 'vaccinated' ? 'Vaccinated' : 'Not vacc.'}
-          icon={dog.vaccination_status === 'vaccinated' ? <Syringe size={14} className="text-[#065F46]" /> : <Syringe size={14} className="text-[#9CA3AF]" />}
-          valueClass={dog.vaccination_status === 'vaccinated' ? 'text-[#065F46]' : 'text-[#9CA3AF]'}
-        />
-      )}
-      <KeyNumberItem
-        label="Location"
-        value={hasGPS ? 'Saved' : 'No GPS'}
-        icon={<MapPin size={14} className={hasGPS ? 'text-[#065F46]' : 'text-[#9CA3AF]'} />}
-        valueClass={hasGPS ? 'text-[#065F46]' : 'text-[#9CA3AF]'}
-        subtext={hasGPS ? `±${bestAccuracy}m` : undefined}
-        isLast
-      />
-    </div>
-  );
-};
-
-interface KeyNumberItemProps {
-  label: string;
-  value: string;
-  subtext?: string;
-  icon?: React.ReactNode;
-  valueClass?: string;
-  isLast?: boolean;
-}
-
-const KeyNumberItem = ({ label, value, subtext, icon, valueClass, isLast }: KeyNumberItemProps) => (
-  <div className={cn("flex-1 flex flex-col items-center px-1 text-center", !isLast && "border-r border-border")}>
-    <span className="text-[11px] font-medium text-[#9CA3AF] mb-0.5">{label}</span>
-    <div className="flex items-center gap-1">
-      {icon}
-      <span className={cn("text-[16px] font-bold", valueClass || "text-[#111827]")}>{value}</span>
-    </div>
-    {subtext && <span className="text-[10px] text-[#9CA3AF] leading-tight mt-0.5">{subtext}</span>}
+// Sub-components
+const StatPill = ({ icon, label, value, valueClass }: any) => (
+  <div className="flex flex-1 flex-col items-center rounded-[10px] border border-border bg-[#F9FAFB] py-2.5 px-2 text-center">
+    <div className="mb-1 text-muted opacity-60">{icon}</div>
+    <span className={cn("text-[14px] font-bold leading-tight", valueClass || "text-dark")}>{value}</span>
+    <span className="mt-0.5 text-[10px] font-medium uppercase tracking-wider text-[#9CA3AF]">{label}</span>
   </div>
 );
 
-const QuickActionsRow = ({ dog }: { dog: DogWithStatus }) => {
-  const navigate = useNavigate();
-  const isCNVR = dog.programme_type === 'cnvr';
-  const hasRelease = dog.events.some(e => e.event_type === 'release');
-  const hasVaccinate = dog.events.some(e => e.event_type === 'vaccinate' || e.event_type === 'on_site_vaccinate');
-  const hasSterilize = dog.events.some(e => e.event_type === 'sterilize');
-
-  return (
-    <div className="flex flex-wrap gap-2">
-      {isCNVR && !hasRelease && (
-        <>
-          {!hasVaccinate && (
-            <Button variant="outline" className="h-9 px-4 rounded-lg text-[13px] border-[#06B6D4] text-[#06B6D4] bg-transparent">
-              Mark Vaccinated
-            </Button>
-          )}
-          {!hasSterilize && (
-            <Button variant="outline" className="h-9 px-4 rounded-lg text-[13px] border-[#EC4899] text-[#EC4899] bg-transparent">
-              Mark Sterilized
-            </Button>
-          )}
-          <Button
-            onClick={() => navigate(`/identify?dogId=${dog.id}`)}
-            className="h-9 px-4 rounded-lg text-[13px] bg-[#10B981] text-white hover:bg-[#0da673] ml-auto"
-          >
-            Release Dog <ArrowRight size={14} className="ml-1" />
-          </Button>
-        </>
-      )}
-
-      {!isCNVR && (
-        <Button variant="outline" className="h-9 px-4 rounded-lg text-[13px] border-[#F0A500] text-[#F0A500] bg-transparent">
-          Record Booster
-        </Button>
-      )}
-    </div>
-  );
-};
-
-const CNVRPipelineMiniView = ({ dog }: { dog: DogWithStatus }) => {
-  const hasSterilize = dog.events.some(e => e.event_type === 'sterilize');
-  const hasVaccinate = dog.events.some(e => e.event_type === 'vaccinate' || e.event_type === 'on_site_vaccinate');
-  const hasRelease = dog.events.some(e => e.event_type === 'release');
-
-  const steps = [
-    { label: 'Caught', completed: true },
-    { label: 'Neutered', completed: hasSterilize },
-    { label: 'Vaccinated', completed: hasVaccinate },
-    { label: 'Released', completed: hasRelease },
-  ];
-
-  return (
-    <div className="mt-4 px-2">
-      <div className="flex items-center justify-between relative">
-        {/* Connecting line */}
-        <div className="absolute left-[12px] right-[12px] top-[12px] h-0.5 bg-gray-200 -z-10" />
-
-        {steps.map((step, idx) => (
-          <div key={idx} className="flex flex-col items-center gap-1.5 bg-white px-1">
-            <div className={cn(
-              "h-6 w-6 rounded-full flex items-center justify-center border-2",
-              step.completed ? "bg-emerald-500 border-emerald-500 text-white" : "bg-white border-gray-300 text-gray-300"
-            )}>
-              {step.completed ? <Check size={14} /> : <Clock size={12} />}
-            </div>
-            <span className={cn(
-              "text-[10px] font-bold",
-              step.completed ? "text-dark" : "text-gray-400"
-            )}>
-              {step.label}
-            </span>
-
-            {/* Dynamic line coloring */}
-            {idx < steps.length - 1 && (
-              <div className={cn(
-                "absolute h-0.5 -z-10",
-                step.completed && steps[idx+1].completed ? "bg-emerald-500" : "bg-gray-200"
-              )} style={{
-                left: `calc(${(idx * 33.33) + 6}% + 12px)`,
-                width: 'calc(27% - 12px)'
-              }} />
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-interface TraitRowProps {
-  label: string;
-  value?: string;
-  swatch?: CoatColor;
-}
-
-const TraitRow = ({ label, value, swatch }: TraitRowProps) => (
+const TraitRow = ({ label, value, swatch }: any) => (
   <div className="flex items-center justify-between">
     <span className="text-[13px] text-muted">{label}</span>
     <div className="flex items-center gap-2">
@@ -465,7 +199,6 @@ const TimelineEvent = ({ event, isExpanded, onToggle }: { event: DogEvent, isExp
     recover: { icon: Clock, color: '#F59E0B', label: 'Recovery' },
     release: { icon: ArrowRight, color: '#10B981', label: 'Released' },
     observation: { icon: Activity, color: '#8B5CF6', label: 'Observed' },
-    on_site_vaccinate: { icon: Syringe, color: '#F0A500', label: 'On-Site Vacc.' },
   }[event.event_type as string] || { icon: Activity, color: '#6B7280', label: 'Event' };
 
   return (
@@ -493,17 +226,6 @@ const TimelineEvent = ({ event, isExpanded, onToggle }: { event: DogEvent, isExp
         {event.handler_name && (
           <div className="mt-1 flex items-center gap-1 text-[12px] text-[#9CA3AF]">
             <User size={12} /> <span>by {event.handler_name}</span>
-          </div>
-        )}
-
-        {event.vaccine_type && (
-          <div className="mt-1.5 flex items-center gap-2">
-            <span className="bg-amber-100 text-[#92400E] text-[11px] font-bold px-2 py-0.5 rounded-full">
-              {event.vaccine_type.toUpperCase()}
-            </span>
-            {event.vaccine_batch && (
-              <span className="text-[11px] text-[#9CA3AF]">Batch: {event.vaccine_batch}</span>
-            )}
           </div>
         )}
 
@@ -539,7 +261,7 @@ const TimelineEvent = ({ event, isExpanded, onToggle }: { event: DogEvent, isExp
 };
 
 const getCoatColorHex = (color: string) => {
-  const map: Record<string, string> = {
+  const map: any = {
     red_brown: '#8B4513',
     black: '#000000',
     white: '#FFFFFF',
@@ -566,11 +288,7 @@ const ProfileSkeleton = () => (
   </div>
 );
 
-interface ProfileErrorProps {
-  error: Error | null;
-}
-
-const ProfileError = ({ error }: ProfileErrorProps) => (
+const ProfileError = ({ error }: any) => (
   <div className="flex h-screen flex-col items-center justify-center p-6 text-center">
     <div className="mb-4 rounded-full bg-red-50 p-6 text-red-500">
         <Info size={48} />

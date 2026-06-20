@@ -33,7 +33,7 @@ export function useDog(dogId: string | undefined) {
         : 'unknown';
 
       // Parse locations
-      const catchEvent = data.events?.find((e: any) => e.event_type === 'catch' || e.event_type === 'on_site_vaccinate');
+      const catchEvent = data.events?.find((e: any) => e.event_type === 'catch');
       const catchLocation = catchEvent?.location
         ? {
             lat: (catchEvent.location as any).coordinates[1],
