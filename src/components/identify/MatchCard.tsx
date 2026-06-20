@@ -1,125 +1,86 @@
 import React from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { MapPin } from 'lucide-react';
+import { MapPin, Calendar, ArrowRight } from 'lucide-react';
 import type { MatchResult } from '@/types';
-import { Card } from '@/components/ui/card';
+import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 interface MatchCardProps {
   result: MatchResult;
   onClick: () => void;
 }
 
-const MatchCard: React.FC<MatchCardProps> = ({ result, onClick }) => {
+export const MatchCard: React.FC<MatchCardProps> = ({ result, onClick }) => {
   const { dog, composite_score, gps_distance_metres } = result;
 
-  const getConfidenceColor = (score: number) => {
-    if (score > 0.7) return '#10B981';
-    if (score >= 0.4) return '#F59E0B';
-    return '#EF4444';
+  const getConfidenceLevel = (score: number) => {
+    if (score > 0.7) return { label: 'High Confidence', color: 'text-green-500', bg: 'bg-green-500', border: 'border-green-500/20' };
+    if (score >= 0.4) return { label: 'Moderate Match', color: 'text-amber-500', bg: 'bg-amber-500', border: 'border-amber-500/20' };
+    return { label: 'Low Confidence', color: 'text-red-500', bg: 'bg-red-500', border: 'border-red-500/20' };
   };
 
-  const getConfidenceLabel = (score: number) => {
-    if (score > 0.7) return 'Strong match';
-    if (score >= 0.4) return 'Possible match';
-    return 'Weak match';
-  };
-
-  const color = getConfidenceColor(composite_score);
-  const label = getConfidenceLabel(composite_score);
-
-  // SVG Arc calculations
-  const r = 16;
-  const circumference = 2 * Math.PI * r;
-  const arcLength = (200 / 360) * circumference;
-  const offset = arcLength * (1 - composite_score);
-
-  const catchEvent = dog.events.find(e => e.event_type === 'catch');
-  const catchDate = catchEvent ? new Date(catchEvent.timestamp) : new Date(dog.created_at);
+  const level = getConfidenceLevel(composite_score);
+  const catchDate = new Date(dog.events.find(e => e.event_type === 'catch')?.timestamp || dog.created_at);
 
   return (
-    <Card
-      className="bg-white border-[1.5px] border-[#E5E7EB] rounded-[14px] shadow-card p-3 flex flex-col gap-3 active:scale-[0.98] transition-transform cursor-pointer"
+    <motion.button
+      whileTap={{ scale: 0.98 }}
       onClick={onClick}
+      className="w-full group text-left bg-white rounded-[28px] p-4 border border-border/40 shadow-sm hover:shadow-md transition-all flex flex-col gap-4 overflow-hidden relative"
     >
-      <div className="flex gap-3">
-        <div className="w-[68px] h-[68px] rounded-[10px] border border-[#E5E7EB] overflow-hidden bg-gray-100 flex-shrink-0">
+      <div className="flex gap-4">
+        {/* Dog Portrait Mini */}
+        <div className="relative w-24 h-24 rounded-[20px] overflow-hidden bg-gray-100 flex-shrink-0 border border-white shadow-sm">
           {dog.cover_image_url ? (
-              <img src={dog.cover_image_url}
-              alt="Reference photo of dog for matching"
-              className="w-full h-full object-cover"
-            />
+            <img src={dog.cover_image_url} alt="Dog reference" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-400">
-              No photo
-            </div>
+            <div className="w-full h-full flex items-center justify-center text-muted/30">No Portrait</div>
           )}
         </div>
 
-        <div className="flex-1 min-w-0">
-          <div className="flex justify-between items-start mb-0.5">
-            <span className="font-mono text-[12px] text-gray-900 truncate">
-              {dog.id.split('-')[0].toUpperCase()}
-            </span>
-            <span className="text-[12px] text-gray-500 whitespace-nowrap ml-2">
-              {formatDistanceToNow(catchDate, { addSuffix: false })} ago
-            </span>
+        {/* Info Area */}
+        <div className="flex-1 min-w-0 space-y-2 py-1">
+          <div className="flex justify-between items-start">
+             <h4 className="text-[17px] font-extrabold text-dark tracking-tight truncate leading-tight">
+                #{dog.id.slice(0, 8).toUpperCase()}
+             </h4>
+             <div className={cn("px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-[0.1em]", level.bg, "text-white")}>
+                {Math.round(composite_score * 100)}% Match
+             </div>
           </div>
 
-          <div className="text-[13px] font-medium text-gray-900 mb-0.5">
-            Caught: {catchDate.toLocaleDateString()}
+          <div className="space-y-1">
+             <div className="flex items-center gap-1.5 text-muted">
+                <Calendar className="w-3 h-3" />
+                <span className="text-[11px] font-bold">Caught {formatDistanceToNow(catchDate)} ago</span>
+             </div>
+             <div className="flex items-center gap-1.5 text-muted">
+                <MapPin className="w-3 h-3" />
+                <span className="text-[11px] font-bold">~{Math.round(gps_distance_metres)}m from original point</span>
+             </div>
           </div>
 
-          <div className="flex items-center text-[12px] text-[#6B7280] mb-0.5">
-            <MapPin className="w-3 h-3 mr-1" />
-            {Math.round(gps_distance_metres)}m from catch
-          </div>
-
-          {catchEvent?.notes && (
-            <div className="text-[12px] text-gray-500 italic truncate">
-              {catchEvent.notes}
-            </div>
-          )}
+          <p className="text-[12px] text-muted font-medium line-clamp-1 italic">
+             "{dog.events[0]?.notes || 'No notes on record'}"
+          </p>
         </div>
       </div>
 
-      <div className="flex items-center gap-3 pt-1">
-        <div className="relative w-9 h-9">
-          <svg className="w-9 h-9 -rotate-[190deg]" viewBox="0 0 40 40">
-            {/* Background Arc */}
-            <circle
-              cx="20"
-              cy="20"
-              r={r}
-              fill="transparent"
-              stroke="#E5E7EB"
-              strokeWidth="4"
-              strokeDasharray={`${arcLength} ${circumference}`}
-              strokeLinecap="round"
-            />
-            {/* Progress Arc */}
-            <circle
-              cx="20"
-              cy="20"
-              r={r}
-              fill="transparent"
-              stroke={color}
-              strokeWidth="4"
-              strokeDasharray={`${arcLength} ${circumference}`}
-              strokeDashoffset={offset}
-              strokeLinecap="round"
-              className="transition-all duration-500"
-            />
-          </svg>
-          <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold" style={{ color }}>
-            {Math.round(composite_score * 100)}%
-          </div>
-        </div>
-        <span className="text-[13px] font-semibold" style={{ color }}>
-          {label}
-        </span>
+      {/* Confidence Footer Bar */}
+      <div className={cn("mt-auto p-3 rounded-[18px] flex items-center justify-between", level.bg, "bg-opacity-[0.04] border border-current border-opacity-[0.08]")}>
+         <div className="flex items-center gap-2">
+            <div className={cn("w-1.5 h-1.5 rounded-full animate-pulse", level.bg)} />
+            <span className={cn("text-[11px] font-extrabold uppercase tracking-widest", level.color)}>{level.label}</span>
+         </div>
+         <ArrowRight className={cn("w-4 h-4", level.color)} />
       </div>
-    </Card>
+
+      {/* Animated Match Indicator */}
+      <motion.div
+        initial={{ width: 0 }}
+        animate={{ width: `${composite_score * 100}%` }}
+        className={cn("absolute bottom-0 left-0 h-[3px]", level.bg)}
+      />
+    </motion.button>
   );
 };
-
-export default MatchCard;
