@@ -27,9 +27,25 @@ const STATUS_COLORS: Record<string, string> = {
   critical: '#EF4444',
 };
 
-const createCustomIcon = (status: EventType, condition: string) => {
-  const isCritical = condition === 'critical';
-  const color = isCritical ? STATUS_COLORS.critical : (STATUS_COLORS[status] || '#9CA3AF');
+const PROGRAMME_COLORS: Record<ProgrammeType, string> = {
+  cnvr: '#0D7377',
+  vaccination: '#F0A500',
+};
+
+const createCustomIcon = (dog: DogCurrentStatusView) => {
+  const isCritical = dog.condition === 'critical';
+  const isReleased = dog.current_status === 'release';
+  const isObservation = dog.current_status === 'observation';
+
+  const color = isCritical
+    ? STATUS_COLORS.critical
+    : isObservation
+      ? STATUS_COLORS.observation
+      : isReleased
+        ? STATUS_COLORS.released
+        : STATUS_COLORS[dog.programme_type as keyof typeof STATUS_COLORS] || STATUS_COLORS.default;
+
+  const progColor = PROGRAMME_COLORS[dog.programme_type] || '#9CA3AF';
 
   return L.divIcon({
     className: '',

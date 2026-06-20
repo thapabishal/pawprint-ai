@@ -161,3 +161,7 @@ export interface RecentActivityEvent extends DogEvent {
     cover_image_url: string | null;
   } | null;
 }
+
+export type SortOption = 'newest' | 'oldest' | 'boosters' | 'activity';
+export type ProgrammeFilter = 'all' | ProgrammeType;
+export type StatusFilter = 'all' | 'clinic' | 'released' | 'critical' | 'overdue';
