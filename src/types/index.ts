@@ -165,3 +165,25 @@ export interface RecentActivityEvent extends DogEvent {
     programme_type: ProgrammeType;
   } | null;
 }
+
+export type UserRole = 'field_worker' | 'clinic_vet' | 'programme_manager' | 'admin';
+
+export interface UserProfile {
+  id: string;
+  full_name: string;
+  role: UserRole;
+  programmes: ProgrammeType[];
+  phone: string | null;
+  avatar_url: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AuthContextType {
+  user: any; // Supabase User
+  profile: UserProfile | null;
+  session: any; // Supabase Session
+  isLoading: boolean;
+  signOut: () => Promise<void>;
+}
