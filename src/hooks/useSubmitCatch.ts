@@ -85,10 +85,10 @@ export const useSubmitCatch = () => {
         const photoBlob = await dataURLToBlob(item.photo_dataurl);
         const compressedFile = await compressDogPhoto(photoBlob);
 
-        // RPC call depends on programme_type
-        let response;
+        let dog_id, event_id;
+
         if (item.programme_type === 'vaccination') {
-          response = await (supabase.rpc as unknown as (name: string, args: unknown) => Promise<{ data: CreateResponse[] | null, error: { message: string } | null }>)('create_onsite_vaccination', {
+          const { data, error: rpcError } = await (supabase.rpc as unknown as (name: string, args: unknown) => Promise<{ data: CreateCatchResponse[] | null, error: { message: string } | null }>)('create_onsite_vaccination', {
             p_sex: item.sex,
             p_age_group: item.age_group,
             p_condition: item.condition,
@@ -96,14 +96,18 @@ export const useSubmitCatch = () => {
             p_lat: item.location?.lat ?? null,
             p_lng: item.location?.lng ?? null,
             p_location_accuracy: item.location_accuracy ?? null,
-            p_vaccine_type: item.vaccine_type,
-            p_vaccine_batch: item.vaccine_batch || null,
-            p_vaccinator_name: item.vaccinator_name || null,
+            p_vaccine_type: item.vaccine_type ?? 'rabies',
+            p_vaccine_batch: 'QUEUED',
+            p_vaccinator_name: 'Queued Sync',
             p_handler_name: item.handler_name,
             p_notes: item.notes
           });
+          if (rpcError) throw new Error(rpcError.message);
+          if (!data || !data[0]) throw new Error('No data returned from create_onsite_vaccination');
+          dog_id = data[0].dog_id;
+          event_id = data[0].event_id;
         } else {
-          response = await (supabase.rpc as unknown as (name: string, args: unknown) => Promise<{ data: CreateResponse[] | null, error: { message: string } | null }>)('create_catch_event', {
+          const { data, error: rpcError } = await (supabase.rpc as unknown as (name: string, args: unknown) => Promise<{ data: CreateCatchResponse[] | null, error: { message: string } | null }>)('create_catch_event', {
             p_sex: item.sex,
             p_age_group: item.age_group,
             p_condition: item.condition,
@@ -115,14 +119,11 @@ export const useSubmitCatch = () => {
             p_handler_name: item.handler_name,
             p_notes: item.notes
           });
+          if (rpcError) throw new Error(rpcError.message);
+          if (!data || !data[0]) throw new Error('No data returned from create_catch_event');
+          dog_id = data[0].dog_id;
+          event_id = data[0].event_id;
         }
-
-        const { data, error: rpcError } = response;
-
-        if (rpcError) throw new Error(rpcError.message);
-        if (!data || !data[0]) throw new Error('No data returned from RPC');
-
-        const { dog_id, event_id } = data[0];
 
         // Handle storage and database metadata updates
         await storageService.uploadDogCover(dog_id, event_id, compressedFile);
@@ -175,24 +176,45 @@ export const useSubmitCatch = () => {
       const photoBlob = await dataURLToBlob(draft.photo_dataurl);
       const compressedFile = await compressDogPhoto(photoBlob);
 
-      // 1. Create records in DB
-      const { data, error: rpcError } = await (supabase.rpc as unknown as (name: string, args: unknown) => Promise<{ data: CreateResponse[] | null, error: { message: string } | null }>)('create_catch_event', {
-        p_sex: draft.sex,
-        p_age_group: draft.age_group,
-        p_condition: draft.condition,
-        p_sterilization_status: 'unknown',
-        p_visual_tags: draft.visual_tags,
-        p_lat: draft.location?.lat ?? null,
-        p_lng: draft.location?.lng ?? null,
-        p_location_accuracy: draft.location_accuracy ?? null,
-        p_handler_name: draft.handler_name,
-        p_notes: draft.notes
-      });
+      let dog_id, event_id;
 
-      if (rpcError) throw new Error(rpcError.message);
-      if (!data || !data[0]) throw new Error('No data returned from create_catch_event');
-
-      const { dog_id, event_id } = data[0];
+      if (draft.programme_type === 'vaccination') {
+        const { data, error: rpcError } = await (supabase.rpc as unknown as (name: string, args: unknown) => Promise<{ data: CreateCatchResponse[] | null, error: { message: string } | null }>)('create_onsite_vaccination', {
+          p_sex: draft.sex,
+          p_age_group: draft.age_group,
+          p_condition: draft.condition,
+          p_visual_tags: draft.visual_tags,
+          p_lat: draft.location?.lat ?? null,
+          p_lng: draft.location?.lng ?? null,
+          p_location_accuracy: draft.location_accuracy ?? null,
+          p_vaccine_type: draft.vaccine_type ?? 'rabies',
+          p_vaccine_batch: 'BATCH-001',
+          p_vaccinator_name: draft.handler_name,
+          p_handler_name: draft.handler_name,
+          p_notes: draft.notes
+        });
+        if (rpcError) throw new Error(rpcError.message);
+        if (!data || !data[0]) throw new Error('No data returned from create_onsite_vaccination');
+        dog_id = data[0].dog_id;
+        event_id = data[0].event_id;
+      } else {
+        const { data, error: rpcError } = await (supabase.rpc as unknown as (name: string, args: unknown) => Promise<{ data: CreateCatchResponse[] | null, error: { message: string } | null }>)('create_catch_event', {
+          p_sex: draft.sex,
+          p_age_group: draft.age_group,
+          p_condition: draft.condition,
+          p_sterilization_status: 'unknown',
+          p_visual_tags: draft.visual_tags,
+          p_lat: draft.location?.lat ?? null,
+          p_lng: draft.location?.lng ?? null,
+          p_location_accuracy: draft.location_accuracy ?? null,
+          p_handler_name: draft.handler_name,
+          p_notes: draft.notes
+        });
+        if (rpcError) throw new Error(rpcError.message);
+        if (!data || !data[0]) throw new Error('No data returned from create_catch_event');
+        dog_id = data[0].dog_id;
+        event_id = data[0].event_id;
+      }
 
       // 2. Upload photo and update metadata
       await storageService.uploadDogCover(dog_id, event_id, compressedFile);

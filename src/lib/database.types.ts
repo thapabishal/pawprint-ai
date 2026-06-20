@@ -242,9 +242,6 @@ export interface Database {
           currently_in_clinic: number
           released_in_period: number
           needs_attention: number
-          caught_in_period: number
-          vaccinated_in_period: number
-          sterilized_in_period: number
           cnvr_total: number
           cnvr_caught_period: number
           cnvr_sterilized_period: number
@@ -252,7 +249,13 @@ export interface Database {
           vacc_total: number
           vacc_in_period: number
           vacc_rabies_period: number
+          vacc_distemper_period: number
+          vacc_combo_period: number
+          vacc_booster_period: number
           vacc_boosters_due: number
+          caught_in_period: number
+          vaccinated_in_period: number
+          sterilized_in_period: number
         }[]
       }
     }
