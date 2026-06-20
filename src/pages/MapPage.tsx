@@ -4,7 +4,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap, Circle } from 'react-le
 import L from 'leaflet';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import type { DogCurrentStatusView, EventType, ProgrammeType } from '@/types';
+import type { DogCurrentStatusView, ProgrammeType } from '@/types';
 import { Navigation } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
