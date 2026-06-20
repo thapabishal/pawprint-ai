@@ -15,25 +15,7 @@ const IdentifyPage = lazy(() => import('@/pages/IdentifyPage'));
 const MapPage = lazy(() => import('@/pages/MapPage'));
 const DashboardPage = lazy(() => import('@/pages/DashboardPage'));
 const DogProfilePage = lazy(() => import('@/pages/DogProfilePage'));
-const BoosterRemindersPage = lazy(() => import('@/pages/BoosterRemindersPage'));
-
-import { useAuth } from '@/hooks/useAuth';
-import { useOverdueCount } from '@/hooks/useBoosterReminders';
 const DogsPage = lazy(() => import('@/pages/DogsPage'));
-
-
-const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRoles: string[] }> = ({ children, allowedRoles }) => {
-  const { data: profile, isLoading } = useAuth();
-  if (isLoading) return <DashboardSkeleton />;
-  if (!profile || !allowedRoles.includes(profile.role)) {
-    return <div className="flex flex-col items-center justify-center h-screen p-8 text-center">
-      <h2 className="text-xl font-bold mb-2">Access Denied</h2>
-      <p className="text-gray-500">You don't have permission to view this page.</p>
-      <button onClick={() => window.location.href = '/'} className="mt-4 text-primary font-bold">Return Home</button>
-    </div>;
-  }
-  return <>{children}</>;
-};
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -63,14 +45,6 @@ const App: React.FC = () => {
                   <Route path="/map" element={<MapPage />} />
                   <Route path="/dogs" element={<DogsPage />} />
                   <Route path="/dog/:id" element={<DogProfilePage />} />
-                  <Route
-                    path="/reminders"
-                    element={
-                      <ProtectedRoute allowedRoles={['clinic_vet', 'programme_manager', 'admin']}>
-                        <BoosterRemindersPage />
-                      </ProtectedRoute>
-                    }
-                  />
                 </Routes>
               </Suspense>
             </main>
@@ -161,25 +135,15 @@ const App: React.FC = () => {
                     }`
                   }
                 >
-                  {({ isActive }) => {
-                    const { data: overdueCount } = useOverdueCount();
-                    return (
-                      <>
-                        <div className="relative">
-                          <LayoutDashboard size={24} strokeWidth={isActive ? 2.5 : 2} />
-                          {overdueCount !== undefined && overdueCount > 0 && (
-                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-[#EF4444] rounded-full border-2 border-white flex items-center justify-center">
-                              <span className="text-white text-[10px] font-bold">{overdueCount}</span>
-                            </div>
-                          )}
-                        </div>
-                        <span className="text-[10px] font-semibold uppercase tracking-wider">Stats</span>
-                        {isActive && (
-                          <div className="absolute bottom-1 h-1.5 w-1.5 rounded-full bg-primary" />
-                        )}
-                      </>
-                    );
-                  }}
+                  {({ isActive }) => (
+                    <>
+                      <LayoutDashboard size={24} strokeWidth={isActive ? 2.5 : 2} />
+                      <span className="text-[10px] font-semibold uppercase tracking-wider">Stats</span>
+                      {isActive && (
+                        <div className="absolute bottom-1 h-1.5 w-1.5 rounded-full bg-primary" />
+                      )}
+                    </>
+                  )}
                 </NavLink>
               </div>
             </nav>
