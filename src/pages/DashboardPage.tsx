@@ -15,7 +15,8 @@ import {
   Syringe,
   Microscope,
   RotateCcw,
-  PlusCircle
+  PlusCircle,
+  Loader2
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { formatDistanceToNow, isBefore, format, differenceInDays } from 'date-fns';
@@ -24,6 +25,8 @@ import { cn } from '@/lib/utils';
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { exportService } from '@/lib/exportService';
+import { useToast } from '@/hooks/use-toast';
 
 // Fix Leaflet default icon bug
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -462,6 +465,8 @@ const RecentActivity = () => {
 
 const DashboardPage: React.FC = () => {
   const [range, setRange] = useState<'7d' | '30d' | 'all'>('30d');
+  const [isExporting, setIsExporting] = useState(false);
+  const { toast } = useToast();
 
   const sinceISO = useMemo(() => {
     if (range === 'all') return new Date(0).toISOString();
@@ -479,6 +484,52 @@ const DashboardPage: React.FC = () => {
     },
     refetchInterval: 30000,
   });
+
+  const { data: boosters } = useQuery({
+    queryKey: ['upcoming_boosters_export'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('dogs')
+        .select('id, cover_image_url, vaccination_date, next_vaccination_due, notes')
+        .eq('vaccination_status', 'vaccinated')
+        .lte('next_vaccination_due', new Date(Date.now() + 30*24*60*60*1000).toISOString())
+        .order('next_vaccination_due', { ascending: true })
+        .limit(50);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!stats
+  });
+
+  const handleExport = async () => {
+    if (!stats) return;
+    setIsExporting(true);
+    toast({
+      title: "Generating Report",
+      description: "Please wait while we prepare your PDF document...",
+    });
+
+    try {
+      await exportService.generateDashboardPDF({
+        stats,
+        range,
+        boosters: boosters || []
+      });
+      toast({
+        title: "Export Successful",
+        description: "Your programme report has been downloaded.",
+      });
+    } catch (err) {
+      console.error('Export failed:', err);
+      toast({
+        title: "Export Failed",
+        description: "There was an error generating your report.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-surface p-4 md:p-8 pt-safe">
@@ -503,8 +554,12 @@ const DashboardPage: React.FC = () => {
                 </button>
               ))}
             </div>
-            <button className="h-10 px-4 rounded-[12px] bg-white border border-gray-200 text-[13px] font-bold text-gray-700 shadow-sm hover:bg-gray-50 transition-colors flex items-center gap-2">
-              <Download size={16} />
+            <button
+              onClick={handleExport}
+              disabled={isExporting}
+              className="h-10 px-4 rounded-[12px] bg-white border border-gray-200 text-[13px] font-bold text-gray-700 shadow-sm hover:bg-gray-50 transition-colors flex items-center gap-2 disabled:opacity-50"
+            >
+              {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
               Export
             </button>
           </div>
