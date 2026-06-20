@@ -9,8 +9,8 @@ import { Navigation, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 // Fix Leaflet default icon bug
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-delete (L.Icon.Default.prototype as any)._getIconUrl;
+// @ts-expect-error - Leaflet internal property access
+delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
@@ -18,6 +18,7 @@ L.Icon.Default.mergeOptions({
 });
 
 const STATUS_COLORS: Record<string, string> = {
+  catch: '#F59E0B',
   caught: '#F59E0B',
   vaccinate: '#F59E0B',
   sterilize: '#F59E0B',
@@ -28,40 +29,40 @@ const STATUS_COLORS: Record<string, string> = {
   critical: '#EF4444',
 };
 
-const PROGRAMME_COLORS: Record<ProgrammeType, string> = {
+const PROGRAMME_COLORS: Record<string, string> = {
   cnvr: '#0D7377',
   vaccination: '#F0A500',
 };
 
-const createCustomIcon = (status: EventType, condition: string, programmeType: ProgrammeType) => {
+const createCustomIcon = (status: string, condition: string, programmeType: ProgrammeType) => {
   const isCritical = condition === 'critical';
   let color = isCritical ? STATUS_COLORS.critical : (STATUS_COLORS[status] || '#9CA3AF');
 
-  // If not critical and not a status with a specific color (like release/observation),
-  // use programme color for catch/vaccinate/sterilize/recover.
-  if (!isCritical && ['catch', 'vaccinate', 'sterilize', 'recover'].includes(status)) {
-    color = PROGRAMME_COLORS[programmeType] || color;
+  if (!isCritical && ['catch', 'caught', 'vaccinate', 'sterilize', 'recover'].includes(status)) {
+    color = PROGRAMME_COLORS[programmeType as string] || color;
   }
 
   return L.divIcon({
     className: '',
-    html: `
-      <div class="relative flex items-center justify-center w-[28px] h-[28px] rounded-full border-[3px] bg-white shadow-md ${isCritical ? 'pulse-critical' : ''}" style="border-color: ${color}">
+    html: `<div class="relative flex items-center justify-center w-[28px] h-[28px] rounded-full border-[3px] bg-white shadow-md ${isCritical ? 'pulse-critical' : ''}" style="border-color: ${color}">
         <div class="w-[16px] h-[16px] rounded-full bg-white"></div>
-      </div>
-    `,
+      </div>`,
     iconSize: [28, 28],
     iconAnchor: [14, 14],
   });
 };
 
-const LocateMeControl = ({ setUserPos }: { setUserPos: (pos: L.LatLng, acc: number) => void }) => {
+interface LocateMeControlProps {
+  onLocationFound: (pos: L.LatLng, accuracy: number) => void;
+}
+
+const LocateMeControl: React.FC<LocateMeControlProps> = ({ onLocationFound }) => {
   const map = useMap();
 
   const handleLocate = () => {
-    map.locate({ setView: false }).on('locationfound', (e) => {
+    map.locate({ setView: false }).on('locationfound', (e: L.LocationEvent) => {
       map.flyTo(e.latlng, 18);
-      setUserPos(e.latlng, e.accuracy);
+      onLocationFound(e.latlng, e.accuracy);
     });
   };
 
@@ -77,7 +78,7 @@ const LocateMeControl = ({ setUserPos }: { setUserPos: (pos: L.LatLng, acc: numb
 };
 
 const MapPage: React.FC = () => {
-  const [filter, setFilter] = useState<'all' | EventType>('all');
+  const [filter, setFilter] = useState<'all' | string>('all');
   const [userPos, setUserPos] = useState<L.LatLng | null>(null);
   const [userAccuracy, setUserAccuracy] = useState<number>(0);
 
@@ -162,7 +163,11 @@ const MapPage: React.FC = () => {
             <Marker
               key={dog.dog_id}
               position={pos}
-              icon={createCustomIcon(dog.current_status, dog.condition, dog.programme_type)}
+              icon={createCustomIcon(
+                dog.current_status || 'unknown',
+                dog.condition || 'unknown',
+                (dog.programme_type as ProgrammeType) || 'cnvr'
+              )}
             >
               <Popup>
                 <div className="flex flex-col p-3 w-full">
@@ -178,12 +183,12 @@ const MapPage: React.FC = () => {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-mono text-xs font-bold text-gray-900 truncate">
-                        ID: {dog.dog_id?.split('-')[0].toUpperCase()}
+                        ID: {(dog.dog_id || '').split('-')[0].toUpperCase()}
                       </p>
                       <div className="flex items-center gap-1 mt-0.5">
                         <div
                           className="w-2 h-2 rounded-full"
-                          style={{ backgroundColor: dog.condition === 'critical' ? STATUS_COLORS.critical : (STATUS_COLORS[dog.current_status] || '#9CA3AF') }}
+                          style={{ backgroundColor: (dog.condition === 'critical' ? STATUS_COLORS.critical : (STATUS_COLORS[dog.current_status || ''] || '#9CA3AF')) }}
                         />
                         <span className="text-[10px] uppercase font-bold text-gray-500 tracking-tight">
                           {dog.current_status}
@@ -222,7 +227,7 @@ const MapPage: React.FC = () => {
           </>
         )}
 
-        <LocateMeControl setUserPos={(pos, acc) => {
+        <LocateMeControl onLocationFound={(pos, acc) => {
           setUserPos(pos);
           setUserAccuracy(acc);
         }} />

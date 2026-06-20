@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useCatchStore } from '../stores/catchStore';
 import { useDraftSave } from '../hooks/useDraftSave';
 import { CameraCapture } from '../components/catch/CameraCapture';
@@ -12,34 +12,33 @@ import { useSubmitCatch } from '../hooks/useSubmitCatch';
 import { useSubmitVaccination } from '../hooks/useSubmitVaccination';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { Loader2, Syringe, Microscope } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import type { ProgrammeType, VaccineType } from '@/types';
+import { useNavigate } from 'react-router-dom';
+import { Loader2, Syringe } from 'lucide-react';
+import { cn } from '../lib/utils';
+import type { VaccineType } from '../types';
 
 const CatchPage: React.FC = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { draft, setNotes, resetDraft, setProgrammeType, setVaccineType } = useCatchStore();
+  const {
+    draft,
+    setNotes,
+    resetDraft,
+    resetForNextVaccination,
+    setVaccineType,
+    setVaccineBatch,
+    setVaccinatorName
+  } = useCatchStore();
+
   useDraftSave(draft);
 
-  useEffect(() => {
-    const state = location.state as { defaultProgramme?: ProgrammeType; defaultVaccineType?: VaccineType } | null;
-    if (state?.defaultProgramme) {
-      setProgrammeType(state.defaultProgramme);
-    }
-    if (state?.defaultVaccineType) {
-      setVaccineType(state.defaultVaccineType);
-    }
-  }, [location.state, setProgrammeType, setVaccineType]);
+  const catchSubmission = useSubmitCatch();
+  const vaccinationSubmission = useSubmitVaccination();
 
-  const {
-    isSubmitting,
-    isOptimistic,
-    successData,
-    submitCatch,
-    clearState
-  } = useSubmitCatch();
+  const isVaccinationMode = draft.programme_type === 'vaccination';
+
+  const currentSubmission = isVaccinationMode ? vaccinationSubmission : catchSubmission;
+  const { isSubmitting, isOptimistic, successData, clearState } = currentSubmission;
+  const submitAction = isVaccinationMode ? vaccinationSubmission.submitVaccination : catchSubmission.submitCatch;
 
   const handleCatchAnother = () => {
     if (isVaccinationMode) {
@@ -65,23 +64,18 @@ const CatchPage: React.FC = () => {
     }
   };
 
-  const isVaccination = draft.programme_type === 'vaccination';
+  const vaccineOptions: { value: VaccineType, label: string, emoji: string }[] = [
+    { value: 'rabies', label: 'Rabies', emoji: '💉' },
+    { value: 'distemper', label: 'Distemper', emoji: '🔬' },
+    { value: 'combo', label: 'Multi-Valent', emoji: '⚕️' },
+    { value: 'booster', label: 'Booster', emoji: '🔄' },
+  ];
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
       {/* Fixed Header */}
       <header className="fixed top-0 left-0 right-0 h-[56px] bg-white border-b border-[#E5E7EB] z-50 flex items-center justify-between px-4">
-        <div className="flex items-center gap-2">
-          <h1 className="text-[18px] font-bold text-[#111827]">
-            {isVaccination ? "💉 Vaccination" : "🐾 New Catch"}
-          </h1>
-          <Badge className={cn(
-            "text-[10px] uppercase tracking-wider",
-            isVaccination ? "bg-[#F0A500] hover:bg-[#F0A500]" : "bg-[#0D7377] hover:bg-[#0D7377]"
-          )}>
-            {draft.programme_type}
-          </Badge>
-        </div>
+        <h1 className="text-[18px] font-bold text-[#111827]">🐾 {isVaccinationMode ? 'On-Site Vaccination' : 'New Catch'}</h1>
         <div className="flex items-center gap-1.5">
           <div className={cn("w-2 h-2 rounded-full animate-pulse", isVaccinationMode ? "bg-[#F0A500]" : "bg-[#0D7377]")} />
           <span className="text-[11px] font-medium text-[#9CA3AF]">Saving...</span>
@@ -90,49 +84,7 @@ const CatchPage: React.FC = () => {
 
       {/* Main Content Area */}
       <main className="flex-1 pt-[56px] pb-[calc(68px+env(safe-area-inset-bottom)+80px)]">
-        {/* Programme Switcher */}
-        <div className="px-4 py-3 bg-gray-50 flex gap-2">
-           <button
-             onClick={() => setProgrammeType('cnvr')}
-             className={cn(
-               "flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[13px] font-bold transition-all border",
-               !isVaccination ? "bg-[#0D7377] text-white border-[#0D7377]" : "bg-white text-gray-500 border-gray-200"
-             )}
-           >
-             <Microscope size={14} /> CNVR
-           </button>
-           <button
-             onClick={() => setProgrammeType('vaccination')}
-             className={cn(
-               "flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-[13px] font-bold transition-all border",
-               isVaccination ? "bg-[#F0A500] text-white border-[#F0A500]" : "bg-white text-gray-500 border-gray-200"
-             )}
-           >
-             <Syringe size={14} /> Vaccination
-           </button>
-        </div>
-
-        {isVaccination && (
-          <div className="px-4 py-3 bg-amber-50/50 border-b border-amber-100">
-             <label className="text-[11px] font-bold text-amber-700 uppercase tracking-wider block mb-2">Vaccine Type</label>
-             <div className="flex gap-2 overflow-x-auto no-scrollbar">
-                {(['rabies', 'distemper', 'combo', 'booster'] as VaccineType[]).map((vt) => (
-                  <button
-                    key={vt}
-                    onClick={() => setVaccineType(vt)}
-                    className={cn(
-                      "px-4 py-1.5 rounded-full text-[12px] font-bold whitespace-nowrap transition-all border",
-                      draft.vaccine_type === vt
-                        ? "bg-[#F0A500] text-white border-[#F0A500] shadow-sm"
-                        : "bg-white text-amber-700 border-amber-200 hover:bg-amber-50"
-                    )}
-                  >
-                    {vt.charAt(0).toUpperCase() + vt.slice(1)}
-                  </button>
-                ))}
-             </div>
-          </div>
-        )}
+        <ProgrammeToggle />
 
         <div className="py-2">
           <LocationCapture />
@@ -243,8 +195,10 @@ const CatchPage: React.FC = () => {
             onClick={submitAction}
             disabled={isSubmitting}
             className={cn(
-              "w-full h-[56px] text-white text-[16px] font-bold rounded-[12px] shadow-lg active:scale-[0.96] transition-all disabled:opacity-70",
-              isVaccination ? "bg-[#F0A500] hover:bg-[#F0A500]/90" : "bg-[#0D7377] hover:bg-[#0D7377]/90"
+              "w-full h-[56px] text-white text-[16px] font-bold rounded-[12px] active:scale-[0.96] transition-all disabled:opacity-70",
+              isVaccinationMode
+                ? "bg-[#F0A500] hover:bg-[#F0A500]/90 shadow-[0_0_20px_rgba(240,165,0,0.25)]"
+                : "bg-[#0D7377] hover:bg-[#0D7377]/90 shadow-[0_0_20px_rgba(13,115,119,0.25)]"
             )}
           >
             {isSubmitting ? (
@@ -253,7 +207,10 @@ const CatchPage: React.FC = () => {
                 <span>{isVaccinationMode ? 'Recording...' : 'Registering...'}</span>
               </div>
             ) : (
-              isVaccination ? "Record Vaccination" : "Save Catch"
+              <div className="flex items-center justify-center gap-2">
+                {isVaccinationMode && <Syringe className="w-5 h-5" />}
+                <span>{isVaccinationMode ? 'Vaccinate & Release' : 'Save Catch Record'}</span>
+              </div>
             )}
           </Button>
         </div>
