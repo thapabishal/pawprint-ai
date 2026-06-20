@@ -1,80 +1,80 @@
-import React, { useEffect } from 'react';
-import { MapPin, RefreshCw, Navigation } from 'lucide-react';
+import React from 'react';
+import { MapPin, CheckCircle, AlertCircle, AlertTriangle, XCircle } from 'lucide-react';
 import { useGPS } from '../../hooks/useGPS';
-import { useCatchStore } from '../../stores/catchStore';
 import { cn } from '../../lib/utils';
-import { motion } from 'framer-motion';
 
 export const LocationCapture: React.FC = () => {
-  const { location, accuracy, status, error, requestLocation } = useGPS();
-  const { setLocation, setGpsStatus, setGpsError, draft } = useCatchStore();
+  const { status, accuracy } = useGPS();
 
-  useEffect(() => {
-    if (location) {
-      setLocation(location, accuracy);
+  const getStatusConfig = () => {
+    switch (status) {
+      case 'requesting':
+        return {
+          bg: 'bg-[#F3F4F6]',
+          text: 'text-[#9CA3AF]',
+          icon: <MapPin size={16} className="animate-spin" />,
+          label: 'Requesting...',
+        };
+      case 'success':
+        if (accuracy !== null && accuracy <= 20) {
+          return {
+            bg: 'bg-[#D1FAE5]',
+            text: 'text-[#065F46]',
+            icon: <CheckCircle size={16} />,
+            label: `±${Math.round(accuracy)}m`,
+          };
+        } else if (accuracy !== null && accuracy <= 50) {
+          return {
+            bg: 'bg-[#FEF3C7]',
+            text: 'text-[#92400E]',
+            icon: <AlertCircle size={16} />,
+            label: `±${Math.round(accuracy)}m`,
+          };
+        } else {
+          return {
+            bg: 'bg-[#FEF3C7]',
+            text: 'text-[#92400E]',
+            icon: <AlertTriangle size={16} />,
+            label: accuracy !== null ? `±${Math.round(accuracy)}m` : 'Poor GPS',
+          };
+        }
+      case 'failed':
+      case 'unavailable':
+        return {
+          bg: 'bg-[#FEE2E2]',
+          text: 'text-[#991B1B]',
+          icon: <XCircle size={16} />,
+          label: 'Failed',
+        };
+      default:
+        return {
+          bg: 'bg-[#F3F4F6]',
+          text: 'text-[#9CA3AF]',
+          icon: <MapPin size={16} />,
+          label: 'Idle',
+        };
     }
-    setGpsStatus(status);
-    setGpsError(error);
-  }, [location, accuracy, status, error, setLocation, setGpsStatus, setGpsError]);
-
-  const getAccuracyColor = (acc: number | null) => {
-    if (!acc) return 'text-muted';
-    if (acc < 20) return 'text-green-500';
-    if (acc < 50) return 'text-amber-500';
-    return 'text-red-500';
   };
 
-  const isVaccination = draft.programme_type === 'vaccination';
-  const isLoading = status === 'requesting';
+  const config = getStatusConfig();
 
   return (
-    <div className="px-5">
-      <motion.div
-        whileTap={{ scale: 0.99 }}
-        onClick={() => requestLocation()}
+    <div className="flex flex-col items-center w-full py-2">
+      <div
         className={cn(
-          "relative group overflow-hidden bg-white rounded-[24px] border-[1.5px] border-border p-5 flex items-center gap-4 transition-all duration-300",
-          isLoading ? "border-primary/30 animate-pulse" : "hover:border-primary/40"
+          'inline-flex items-center px-3 h-8 rounded-full gap-1.5 transition-colors duration-300',
+          config.bg,
+          config.text
         )}
       >
-        <div className={cn(
-          "w-12 h-12 rounded-[18px] flex items-center justify-center transition-colors duration-300",
-          status === 'success'
-            ? (isVaccination ? "bg-accent/10 text-accent" : "bg-primary/10 text-primary")
-            : "bg-gray-100 text-muted"
-        )}>
-          {isLoading ? (
-            <RefreshCw className="w-6 h-6 animate-spin" />
-          ) : (
-            <MapPin className="w-6 h-6" />
-          )}
-        </div>
-
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <span className="text-[15px] font-bold text-dark">
-              {status === 'success' ? 'Location Locked' : isLoading ? 'Locating...' : 'Get GPS Location'}
-            </span>
-            {status === 'success' && accuracy && (
-              <div className="flex items-center gap-1 px-1.5 py-0.5 bg-gray-50 rounded-full border border-border">
-                <Navigation className="w-2.5 h-2.5 text-muted rotate-45" />
-                <span className={cn("text-[10px] font-bold", getAccuracyColor(accuracy))}>
-                  ±{Math.round(accuracy)}m
-                </span>
-              </div>
-            )}
-          </div>
-          <p className="text-[12px] text-muted font-medium mt-0.5">
-            {status === 'success'
-              ? `Lat: ${location?.lat.toFixed(5)}, Lng: ${location?.lng.toFixed(5)}`
-              : error || 'High precision GPS recommended'}
-          </p>
-        </div>
-
-        <div className="text-muted group-hover:text-primary transition-colors">
-          <RefreshCw className={cn("w-5 h-5", isLoading && "hidden")} />
-        </div>
-      </motion.div>
+        <span className="flex-shrink-0">{config.icon}</span>
+        <span className="text-[12px] font-semibold leading-none">{config.label}</span>
+      </div>
+      {(status === 'failed' || status === 'unavailable') && (
+        <p className="mt-1 text-[11px] text-[#6B7280] font-medium leading-none">
+          Location unavailable — add notes below
+        </p>
+      )}
     </div>
   );
 };

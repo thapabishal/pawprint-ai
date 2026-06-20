@@ -10,7 +10,7 @@ interface ReleaseSuccessProps {
   daysInProgramme: number;
 }
 
-export const ReleaseSuccess: React.FC<ReleaseSuccessProps> = ({
+const ReleaseSuccess: React.FC<ReleaseSuccessProps> = ({
   onDone,
   catchLocationName = "Unknown",
   releaseLocationName = "Current Location",
