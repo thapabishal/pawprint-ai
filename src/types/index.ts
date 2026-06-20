@@ -5,8 +5,7 @@ export type SterilizationStatus = 'intact' | 'sterilized' | 'unknown';
 export type EarType = 'prick' | 'semi_floppy' | 'fully_floppy' | 'cropped' | 'torn_notched';
 export type CoatColor = 'red_brown' | 'black' | 'white' | 'grey' | 'brindle' | 'mixed';
 export type Marking = 'white_chest' | 'white_paws' | 'black_mask' | 'sickle_tail' | 'curled_tail';
-export type EventType = 'catch' | 'vaccinate' | 'sterilize' | 'recover' | 'release' | 'observation' | 'on_site_vaccinate' | 'treat' | 'died' | 'escaped';
-export type EventOutcome = 'completed' | 'health_unfit' | 'already_done' | 'owner_refused' | 'escaped' | 'died' | 'deferred';
+export type EventType = 'catch' | 'vaccinate' | 'sterilize' | 'recover' | 'release' | 'observation' | 'on_site_vaccinate';
 export type GPSStatus = 'idle' | 'requesting' | 'success' | 'failed' | 'unavailable';
 export type ProgrammeType = 'cnvr' | 'vaccination';
 export type VaccineType = 'rabies' | 'distemper' | 'combo' | 'booster';
@@ -40,13 +39,11 @@ export interface DogEvent {
   location: GeoPoint | null;
   location_accuracy: number | null;
   handler_name: string | null;
-  handler_id?: string | null;
   notes: string | null;
   confirmed_match: boolean;
   vaccine_type?: VaccineType | null;
   vaccine_batch?: string | null;
   vaccinator_name?: string | null;
-  outcome?: EventOutcome | null;
   timestamp: string;
 }
 
@@ -169,42 +166,6 @@ export interface RecentActivityEvent extends DogEvent {
   } | null;
 }
 
-export type BoosterStatus = 'pending' | 'due_soon' | 'overdue' | 'completed' | 'dismissed';
-
-export interface BoosterSchedule {
-  id: string;
-  vaccine_type: VaccineType;
-  schedule_name: string;
-  first_booster_days: number;
-  repeat_booster_days: number | null;
-  is_default: boolean;
-  created_at: string;
-}
-
-export interface BoosterReminder {
-  id: string;
-  dog_id: string;
-  vaccination_event_id: string;
-  schedule_id: string | null;
-  vaccine_type: VaccineType;
-  due_date: string;
-  status: BoosterStatus;
-  completed_at: string | null;
-  completed_event_id: string | null;
-  notes: string | null;
-  created_at: string;
-  updated_at: string;
-  dogs?: {
-    cover_image_url: string | null;
-    visual_tags: VisualTags;
-    programme_type: ProgrammeType;
-  };
-  vaccination_event?: {
-    vaccine_type: VaccineType;
-    timestamp: string;
-  };
-}
-
 export type UserRole = 'field_worker' | 'clinic_vet' | 'programme_manager' | 'admin';
 
 export interface UserProfile {
@@ -225,4 +186,9 @@ export interface AuthContextType {
   session: any; // Supabase Session
   isLoading: boolean;
   signOut: () => Promise<void>;
+}
+
+export interface ProtectedRouteProps {
+  children: React.ReactNode;
+  allowedRoles?: UserRole[];
 }

@@ -3,12 +3,14 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { DashboardSkeleton } from '@/components/Skeletons';
 import { AlertTriangle } from 'lucide-react';
+import { UserRole } from '@/types';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  allowedRoles?: UserRole[];
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
   const { session, profile, isLoading, signOut } = useAuth();
   const location = useLocation();
 
@@ -51,6 +53,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
         </button>
       </div>
     );
+  }
+
+  // Role check
+  if (allowedRoles && !allowedRoles.includes(profile.role)) {
+    return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;
