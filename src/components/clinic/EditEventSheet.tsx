@@ -60,9 +60,6 @@ export const EditEventSheet: React.FC<EditEventSheetProps> = ({
     setIsSubmitting(true);
     try {
       // Helper to return null if value hasn't changed
-      const getVal = (current: any, original: any) => {
-        return current === original ? null : (current === '' ? null : current);
-      };
 
       // Special handling for outcome/vaccineType which might be null in original
       const getNullableVal = (current: any, original: any) => {
