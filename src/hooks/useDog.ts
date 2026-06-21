@@ -13,7 +13,8 @@ export function useDog(dogId: string | undefined) {
         .from('dogs')
         .select(`
           *,
-          events (*, handler:user_profiles(full_name, avatar_url, role)),
+          events (*,
+          editor_profile:user_profiles!edited_by(full_name)),
           dog_images (*)
         `) as any)
         .eq('id', dogId)
