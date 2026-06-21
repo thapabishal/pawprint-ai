@@ -33,10 +33,8 @@ const AdminPage: React.FC = () => {
     setRefreshing(true);
     try {
       // Fetch users
-      const { data: userData, error: userError } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const query = supabase.from('user_profiles').select('*').order('created_at', { ascending: false });
+      const { data: userData, error: userError } = await (query as any);
 
       if (userError) throw userError;
       setUsers(userData as UserProfile[]);
@@ -45,8 +43,8 @@ const AdminPage: React.FC = () => {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-      const { data: statsData, error: statsError } = await supabase
-        .rpc('get_field_worker_stats', { since: thirtyDaysAgo.toISOString() });
+      const rpcCall = supabase.rpc('get_field_worker_stats' as any, { since: thirtyDaysAgo.toISOString() } as any);
+      const { data: statsData, error: statsError } = await (rpcCall as any);
 
       if (statsError) throw statsError;
       setStats(statsData as FieldWorkerStats[]);
@@ -73,10 +71,8 @@ const AdminPage: React.FC = () => {
 
   const handleUpdateRole = async (userId: string, role: UserRole) => {
     try {
-      const { error } = await supabase
-        .from('user_profiles')
-        .update({ role })
-        .eq('id', userId);
+      const updateCall = (supabase.from('user_profiles') as any).update({ role }).eq('id', userId);
+      const { error } = await (updateCall as any);
 
       if (error) throw error;
 
@@ -97,10 +93,8 @@ const AdminPage: React.FC = () => {
 
   const handleToggleActive = async (userId: string, currentStatus: boolean) => {
     try {
-      const { error } = await supabase
-        .from('user_profiles')
-        .update({ is_active: !currentStatus })
-        .eq('id', userId);
+      const updateCall = (supabase.from('user_profiles') as any).update({ is_active: !currentStatus }).eq('id', userId);
+      const { error } = await (updateCall as any);
 
       if (error) throw error;
 

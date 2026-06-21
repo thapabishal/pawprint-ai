@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Copy, ExternalLink, Info, CheckCircle2 } from 'lucide-react';
+import { Copy, ExternalLink, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const SQL_TEMPLATE = `INSERT INTO public.user_profiles (
@@ -50,7 +50,7 @@ const AddUserGuide: React.FC = () => {
             <div className="space-y-1">
               <p className="text-sm font-semibold text-slate-200">Create Auth User</p>
               <p className="text-xs text-slate-400">
-                Go to <span className="text-blue-400 font-medium">Authentication > Users</span> in Supabase and click "Add User".
+                Go to <span className="text-blue-400 font-medium">Authentication &gt; Users</span> in Supabase and click "Add User".
               </p>
             </div>
           </div>

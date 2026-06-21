@@ -9,8 +9,8 @@ import {
   Activity,
   UserMinus,
   UserPlus,
-  ShieldCheck,
-  MoreVertical
+  ShieldCheck
+
 } from 'lucide-react';
 import { RoleBadge } from '@/components/RoleBadge';
 import { Badge } from '@/components/ui/badge';
