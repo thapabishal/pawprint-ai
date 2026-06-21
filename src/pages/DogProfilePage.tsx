@@ -1,63 +1,46 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  ChevronLeft,
-  MapPin,
-  User,
-  Edit2,
-  ArrowRight,
-  Info,
   Activity,
   Scissors,
   Syringe,
-  PawPrint,
+  MapPin,
   Clock,
+  ArrowRight,
+  ChevronRight,
+  User,
   HeartPulse,
+  Info,
   XCircle,
   AlertTriangle,
-  Pencil
+  Edit2,
 } from 'lucide-react';
-import { format, formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, format, differenceInDays, isBefore } from 'date-fns';
+import { motion } from 'framer-motion';
 import { useDog } from '@/hooks/useDog';
-import { StatusBadge } from '@/components/StatusBadge';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/contexts/AuthContext';
+import { StatusBadge } from '@/components/StatusBadge';
 import { ClinicActionsPanel } from '@/components/clinic/ClinicActionsPanel';
 import { EventLogger } from '@/components/clinic/EventLogger';
-import { EditEventSheet } from '@/components/clinic/EditEventSheet';
-import type { DogEvent, EventType, UserProfile } from '@/types';
+import { DogEvent, EventType } from '@/types';
 
 const DogProfilePage: React.FC = () => {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { profile } = useAuth();
   const { data: dog, isLoading, error, refetch } = useDog(id);
-  const [isExpanded, setIsExpanded] = useState<Record<string, boolean>>({});
-  const [showEditDetails, setShowEditDetails] = useState<Record<string, boolean>>({});
-
   const [activeAction, setActiveAction] = useState<EventType | null>(null);
   const [isLoggerOpen, setIsLoggerOpen] = useState(false);
-
-  const [eventToEdit, setEventToEdit] = useState<DogEvent | null>(null);
-  const [isEditSheetOpen, setIsEditSheetOpen] = useState(false);
-
-  const now = useMemo(() => new Date(), []);
+  const [expandedNotes, setExpandedNotes] = useState<Record<string, boolean>>({});
 
   if (isLoading) return <ProfileSkeleton />;
   if (error || !dog) return <ProfileError error={error} />;
 
-  const daysInSystem = Math.floor(
-    (now.getTime() - new Date(dog.created_at).getTime()) / (1000 * 60 * 60 * 24)
-  );
-
   const toggleNotes = (eventId: string) => {
-    setIsExpanded(prev => ({ ...prev, [eventId]: !prev[eventId] }));
-  };
-
-  const toggleEditDetails = (eventId: string) => {
-    setShowEditDetails(prev => ({ ...prev, [eventId]: !prev[eventId] }));
+    setExpandedNotes(prev => ({ ...prev, [eventId]: !prev[eventId] }));
   };
 
   const handleAction = (type: EventType) => {
@@ -65,48 +48,43 @@ const DogProfilePage: React.FC = () => {
     setIsLoggerOpen(true);
   };
 
-  const handleEdit = (event: DogEvent) => {
-    setEventToEdit(event);
-    setIsEditSheetOpen(true);
-  };
+  const daysInSystem = differenceInDays(new Date(), new Date(dog.created_at));
 
-  // Determine if booster is due
-  const isBoosterDue = dog.next_vaccination_due
-    ? new Date(dog.next_vaccination_due).getTime() <= now.getTime() + (30 * 86400000)
-    : false;
+  // Determine if booster is due/overdue
+  const boosterDate = dog.next_vaccination_due ? new Date(dog.next_vaccination_due) : null;
+  const isBoosterDue = boosterDate ? isBefore(boosterDate, new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)) : false;
 
   return (
-    <div className="min-h-screen bg-surface pb-32">
-      {/* Hero Section */}
-      <div className="relative h-[260px] w-full overflow-hidden bg-gray-200">
+    <div className="min-h-screen bg-surface pb-24">
+      {/* Immersive Header */}
+      <div className="relative h-[260px] w-full overflow-hidden">
         {dog.cover_image_url ? (
-          <img
+          <motion.img
+            layoutId={`dog-image-${dog.id}`}
             src={dog.cover_image_url}
-            alt="Dog Hero"
-            className="h-full w-full object-cover object-top"
+            className="h-full w-full object-cover"
+            alt="Dog cover"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gray-100 text-gray-300">
-            <PawPrint size={80} strokeWidth={1} />
+          <div className="flex h-full w-full items-center justify-center bg-slate-200 text-slate-400">
+            <Activity size={64} />
           </div>
         )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
-        {/* Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-
-        {/* Top Controls */}
+        {/* Back Button */}
         <button
           onClick={() => navigate(-1)}
-          className="absolute left-4 top-4 flex h-11 w-11 items-center justify-center rounded-full bg-white/90 shadow-md backdrop-blur-sm transition-transform active:scale-95"
+          className="absolute left-4 top-12 flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-md text-white active:scale-90 transition-transform"
         >
-          <ChevronLeft size={20} className="text-dark" />
+          <ChevronRight className="rotate-180" size={24} />
         </button>
 
-        {/* Bottom Info Overlay */}
-        <div className="absolute bottom-11 left-4 right-4 flex items-end justify-between">
-          <div className="flex flex-col gap-1">
-            <span className="font-mono text-[12px] font-medium text-white/60">
-              ID: {dog.id.toUpperCase()}
+        {/* Floating ID Badge */}
+        <div className="absolute bottom-6 left-4 right-4 flex items-end justify-between">
+          <div>
+            <span className="text-[28px] font-black text-white tracking-tight uppercase">
+              ID: {dog.id.split('-')[0]}
             </span>
             <div className="flex items-center gap-2">
               <StatusBadge status={dog.current_status} />
@@ -194,13 +172,8 @@ const DogProfilePage: React.FC = () => {
               <TimelineEvent
                 key={event.id}
                 event={event}
-                isExpanded={isExpanded[event.id]}
+                isExpanded={!!expandedNotes[event.id]}
                 onToggle={() => toggleNotes(event.id)}
-                onEdit={() => handleEdit(event)}
-                currentUser={profile}
-                showEditDetails={showEditDetails[event.id]}
-                onToggleEditDetails={() => toggleEditDetails(event.id)}
-                now={now}
               />
             ))}
           </div>
@@ -217,19 +190,12 @@ const DogProfilePage: React.FC = () => {
           catchPhotoUrl={dog.cover_image_url}
         />
       )}
-
-      <EditEventSheet
-        isOpen={isEditSheetOpen}
-        onOpenChange={setIsEditSheetOpen}
-        event={eventToEdit}
-        onSuccess={() => refetch()}
-      />
     </div>
   );
 };
 
 // Sub-components
-const StatPill = ({ icon, label, value, valueClass }: { icon: React.ReactNode, label: string, value: string, valueClass?: string }) => (
+const StatPill = ({ icon, label, value, valueClass }: any) => (
   <div className="flex flex-1 flex-col items-center rounded-[10px] border border-border bg-[#F9FAFB] py-2.5 px-2 text-center">
     <div className="mb-1 text-muted opacity-60">{icon}</div>
     <span className={cn("text-[14px] font-bold leading-tight", valueClass || "text-dark")}>{value}</span>
@@ -237,7 +203,7 @@ const StatPill = ({ icon, label, value, valueClass }: { icon: React.ReactNode, l
   </div>
 );
 
-const TraitRow = ({ label, value, swatch }: { label: string, value?: string, swatch?: string }) => (
+const TraitRow = ({ label, value, swatch }: any) => (
   <div className="flex items-center justify-between">
     <span className="text-[13px] text-muted">{label}</span>
     <div className="flex items-center gap-2">
@@ -249,26 +215,8 @@ const TraitRow = ({ label, value, swatch }: { label: string, value?: string, swa
   </div>
 );
 
-const TimelineEvent = ({
-  event,
-  isExpanded,
-  onToggle,
-  onEdit,
-  currentUser,
-  showEditDetails,
-  onToggleEditDetails,
-  now
-}: {
-  event: DogEvent,
-  isExpanded: boolean,
-  onToggle: () => void,
-  onEdit: () => void,
-  currentUser: UserProfile | null,
-  showEditDetails: boolean,
-  onToggleEditDetails: () => void,
-  now: Date
-}) => {
-  const configMap: Record<string, { icon: React.ElementType, color: string, label: string }> = {
+const TimelineEvent = ({ event, isExpanded, onToggle }: { event: DogEvent, isExpanded: boolean, onToggle: () => void }) => {
+  const configMap: Record<string, { icon: any, color: string, label: string }> = {
     catch: { icon: Activity, color: '#F59E0B', label: 'Caught' },
     vaccinate: { icon: Syringe, color: '#06B6D4', label: 'Vaccinated' },
     sterilize: { icon: Scissors, color: '#EC4899', label: 'Sterilized' },
@@ -283,11 +231,6 @@ const TimelineEvent = ({
 
   const config = configMap[event.event_type] || configMap.catch;
 
-  const isWithin24h = new Date(event.timestamp).getTime() > now.getTime() - 24 * 60 * 60 * 1000;
-  const isAdmin = currentUser?.role === 'admin';
-  const isOriginalHandler = currentUser?.id === event.handler_id;
-  const canEdit = isAdmin || (isOriginalHandler && isWithin24h);
-
   return (
     <div className="relative pl-7">
       {/* Dot */}
@@ -298,63 +241,47 @@ const TimelineEvent = ({
 
       <div className="rounded-[12px] border border-border bg-white p-3.5 shadow-sm transition-shadow hover:shadow-md" style={{ borderLeft: `3px solid ${config.color}` }}>
         <div className="flex items-start justify-between">
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-1.5">
-              <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: config.color }}>{config.label}</span>
-              {event.outcome && event.outcome !== 'completed' && (
-                 <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500 uppercase">
-                   {event.outcome.replace('_', ' ')}
-                 </span>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] font-medium text-[#9CA3AF]">
-                {formatDistanceToNow(new Date(event.timestamp))} ago
-              </span>
-              {event.is_edited && (
-                <button
-                  onClick={onToggleEditDetails}
-                  className="rounded-full bg-[#F3F4F6] px-2 py-0.5 text-[10px] font-bold text-[#9CA3AF] uppercase transition-colors hover:bg-slate-200"
-                >
-                  edited
-                </button>
-              )}
-            </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: config.color }}>{config.label}</span>
+            {event.outcome && event.outcome !== 'completed' && (
+               <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500 uppercase">
+                 {event.outcome.replace('_', ' ')}
+               </span>
+            )}
           </div>
-
-          {canEdit && (
-            <button
-              onClick={onEdit}
-              className="flex h-7 w-7 items-center justify-center rounded-full text-[#9CA3AF] transition-colors hover:bg-slate-100 active:scale-90"
-            >
-              <Pencil size={16} />
-            </button>
-          )}
+          <span className="text-[11px] font-medium text-[#9CA3AF]">
+            {formatDistanceToNow(new Date(event.timestamp))} ago
+          </span>
         </div>
-
-        {showEditDetails && event.is_edited && (
-          <div className="mt-2 space-y-1 rounded-lg bg-slate-50 p-2.5 border border-dashed border-slate-200">
-            <p className="text-[11px] italic text-[#9CA3AF]">
-              Edited {event.edited_at ? formatDistanceToNow(new Date(event.edited_at)) : 'some time'} ago by {event.editor_profile?.full_name || 'System'}
-            </p>
-            <p className="text-[11px] text-[#9CA3AF]">
-              <span className="font-bold">Reason:</span> {event.edit_reason}
-            </p>
-          </div>
-        )}
 
         <div className="mt-1 text-[13px] font-bold text-slate-700">
           {format(new Date(event.timestamp), 'MMM d, yyyy • h:mm a')}
         </div>
 
-        {event.handler_name && (
-          <div className="mt-1 flex items-center gap-1 text-[12px] text-[#9CA3AF]">
-            <User size={12} /> <span>by {event.handler_name}</span>
+        <div className="mt-2.5 flex items-center gap-2">
+          <div className="w-6 h-6 rounded-full overflow-hidden bg-gray-100 border border-gray-50 flex-none">
+            {event.handler?.avatar_url ? (
+              <img src={event.handler.avatar_url} className="w-full h-full object-cover" alt="" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-[10px] font-bold text-gray-400">
+                {(event.handler?.full_name || event.handler_name || 'U').split(' ').map((n: string) => n[0]).join('')}
+              </div>
+            )}
           </div>
-        )}
+          <div className="flex flex-col">
+            <span className="text-[12px] font-bold text-slate-600">
+              {event.handler?.full_name || event.handler_name || 'Unknown'}
+            </span>
+            {event.handler?.role && (
+              <span className="text-[9px] font-bold text-[#9CA3AF] uppercase tracking-tighter -mt-0.5">
+                {event.handler.role.replace('_', ' ')}
+              </span>
+            )}
+          </div>
+        </div>
 
         {event.notes && (
-          <div className="mt-2">
+          <div className="mt-2.5">
             <p className={cn("text-[13px] italic text-body leading-relaxed", !isExpanded && "line-clamp-2")}>
               "{event.notes}"
             </p>
@@ -412,7 +339,7 @@ const ProfileSkeleton = () => (
   </div>
 );
 
-const ProfileError = ({ error }: { error: any }) => (
+const ProfileError = ({ error }: any) => (
   <div className="flex h-screen flex-col items-center justify-center p-6 text-center">
     <div className="mb-4 rounded-full bg-red-50 p-6 text-red-500">
         <Info size={48} />
