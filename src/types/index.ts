@@ -227,3 +227,15 @@ export interface BoosterReminder {
   created_at: string;
   updated_at: string;
 }
+
+export interface FieldWorkerStats {
+  user_id: string;
+  full_name: string;
+  role: UserRole;
+  avatar_url: string | null;
+  catches: number;
+  vaccinations: number;
+  releases: number;
+  total_events: number;
+  last_active: string | null;
+}
