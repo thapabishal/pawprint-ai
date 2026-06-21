@@ -1,96 +1,92 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  ChevronLeft,
-  MapPin,
-  User,
-  Edit2,
-  ArrowRight,
-  Info,
   Activity,
   Scissors,
   Syringe,
-  PawPrint,
+  MapPin,
   Clock,
+  ArrowRight,
+  ChevronRight,
+  User,
   HeartPulse,
+  Info,
   XCircle,
-  AlertTriangle
+  AlertTriangle,
+  Edit2,
+  Calendar,
+  AlertCircle
 } from 'lucide-react';
-import { format, formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, format, differenceInDays, isBefore } from 'date-fns';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useDog } from '@/hooks/useDog';
-import { StatusBadge } from '@/components/StatusBadge';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/contexts/AuthContext';
-import { ClinicActionsPanel } from '@/components/clinic/ClinicActionsPanel';
-import { EventLogger } from '@/components/clinic/EventLogger';
-import type { DogEvent, EventType } from '@/types';
+import StatusBadge from '@/components/StatusBadge';
+import ClinicActionsPanel from '@/components/clinic/ClinicActionsPanel';
+import EventLogger from '@/components/clinic/EventLogger';
+import { DogEvent, EventType } from '@/types';
 
 const DogProfilePage: React.FC = () => {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { profile } = useAuth();
   const { data: dog, isLoading, error, refetch } = useDog(id);
-  const [isExpanded, setIsExpanded] = useState<Record<string, boolean>>({});
-
   const [activeAction, setActiveAction] = useState<EventType | null>(null);
   const [isLoggerOpen, setIsLoggerOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState<Record<string, boolean>>({});
 
   if (isLoading) return <ProfileSkeleton />;
   if (error || !dog) return <ProfileError error={error} />;
-
-  const daysInSystem = Math.floor(
-    (new Date().getTime() - new Date(dog.created_at).getTime()) / (1000 * 60 * 60 * 24)
-  );
 
   const toggleNotes = (eventId: string) => {
     setIsExpanded(prev => ({ ...prev, [eventId]: !prev[eventId] }));
   };
 
-  const handleAction = (type: any) => {
+  const handleAction = (type: EventType) => {
     setActiveAction(type);
     setIsLoggerOpen(true);
   };
 
-  // Determine if booster is due
-  // For now, if next_vaccination_due is within 30 days or past
-  const isBoosterDue = dog.next_vaccination_due
-    ? new Date(dog.next_vaccination_due).getTime() <= new Date().getTime() + (30 * 86400000)
-    : false;
+  const daysInSystem = differenceInDays(new Date(), new Date(dog.created_at));
+
+  // Determine if booster is due/overdue
+  const boosterDate = dog.next_vaccination_due ? new Date(dog.next_vaccination_due) : null;
+  const isBoosterDue = boosterDate ? isBefore(boosterDate, new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)) : false;
 
   return (
-    <div className="min-h-screen bg-surface pb-32">
-      {/* Hero Section */}
-      <div className="relative h-[260px] w-full overflow-hidden bg-gray-200">
+    <div className="min-h-screen bg-surface pb-24">
+      {/* Immersive Header */}
+      <div className="relative h-[260px] w-full overflow-hidden">
         {dog.cover_image_url ? (
-          <img
+          <motion.img
+            layoutId={`dog-image-${dog.id}`}
             src={dog.cover_image_url}
-            alt="Dog Hero"
-            className="h-full w-full object-cover object-top"
+            className="h-full w-full object-cover"
+            alt="Dog cover"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gray-100 text-gray-300">
-            <PawPrint size={80} strokeWidth={1} />
+          <div className="flex h-full w-full items-center justify-center bg-slate-200 text-slate-400">
+            <Activity size={64} />
           </div>
         )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
-        {/* Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-
-        {/* Top Controls */}
+        {/* Back Button */}
         <button
           onClick={() => navigate(-1)}
-          className="absolute left-4 top-4 flex h-11 w-11 items-center justify-center rounded-full bg-white/90 shadow-md backdrop-blur-sm transition-transform active:scale-95"
+          className="absolute left-4 top-12 flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-md text-white active:scale-90 transition-transform"
         >
-          <ChevronLeft size={20} className="text-dark" />
+          <ChevronRight className="rotate-180" size={24} />
         </button>
 
-        {/* Bottom Info Overlay */}
-        <div className="absolute bottom-11 left-4 right-4 flex items-end justify-between">
-          <div className="flex flex-col gap-1">
-            <span className="font-mono text-[12px] font-medium text-white/60">
-              ID: {dog.id.toUpperCase()}
+        {/* Floating ID Badge */}
+        <div className="absolute bottom-6 left-4 right-4 flex items-end justify-between">
+          <div>
+            <span className="text-[28px] font-black text-white tracking-tight uppercase">
+              ID: {dog.id.split('-')[0]}
             </span>
             <div className="flex items-center gap-2">
               <StatusBadge status={dog.current_status} />
@@ -264,14 +260,30 @@ const TimelineEvent = ({ event, isExpanded, onToggle }: { event: DogEvent, isExp
           {format(new Date(event.timestamp), 'MMM d, yyyy • h:mm a')}
         </div>
 
-        {event.handler_name && (
-          <div className="mt-1 flex items-center gap-1 text-[12px] text-[#9CA3AF]">
-            <User size={12} /> <span>by {event.handler_name}</span>
+        <div className="mt-2.5 flex items-center gap-2">
+          <div className="w-6 h-6 rounded-full overflow-hidden bg-gray-100 border border-gray-50 flex-none">
+            {event.handler?.avatar_url ? (
+              <img src={event.handler.avatar_url} className="w-full h-full object-cover" alt="" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-[10px] font-bold text-gray-400">
+                {(event.handler?.full_name || event.handler_name || 'U').split(' ').map(n => n[0]).join('')}
+              </div>
+            )}
           </div>
-        )}
+          <div className="flex flex-col">
+            <span className="text-[12px] font-bold text-slate-600">
+              {event.handler?.full_name || event.handler_name || 'Unknown'}
+            </span>
+            {event.handler?.role && (
+              <span className="text-[9px] font-bold text-[#9CA3AF] uppercase tracking-tighter -mt-0.5">
+                {event.handler.role.replace('_', ' ')}
+              </span>
+            )}
+          </div>
+        </div>
 
         {event.notes && (
-          <div className="mt-2">
+          <div className="mt-2.5">
             <p className={cn("text-[13px] italic text-body leading-relaxed", !isExpanded && "line-clamp-2")}>
               "{event.notes}"
             </p>

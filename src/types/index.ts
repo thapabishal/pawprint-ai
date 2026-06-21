@@ -80,6 +80,7 @@ export interface DogEvent {
   vaccinator_name?: string | null;
   outcome?: ClinicalOutcome | null;
   timestamp: string;
+  handler?: { full_name: string; avatar_url: string | null; role: UserRole } | null;
 }
 
 export interface GeoPoint {
@@ -226,4 +227,24 @@ export interface BoosterReminder {
   notes: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface FieldWorkerStats {
+  user_id: string;
+  full_name: string;
+  role: UserRole;
+  avatar_url: string | null;
+  catches: number;
+  vaccinations: number;
+  releases: number;
+  total_events: number;
+  last_active: string;
+}
+
+export interface RecentActivityEventWithHandler extends RecentActivityEvent {
+  handler?: {
+    full_name: string;
+    avatar_url: string | null;
+    role: UserRole;
+  } | null;
 }

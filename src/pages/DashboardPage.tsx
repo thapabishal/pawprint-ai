@@ -1,3 +1,4 @@
+import { useAuth } from '@/contexts/AuthContext';
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
@@ -19,7 +20,8 @@ import { MapContainer, TileLayer, CircleMarker } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import {
   DashboardStats,
-  RecentActivityEvent,
+  RecentActivityEvent, RecentActivityEventWithHandler,
+  FieldWorkerStats,
   DogCNVRProgressView,
   ProgrammeType
 } from '@/types';
@@ -103,7 +105,62 @@ const CNVRPipeline: React.FC<{ progress: DogCNVRProgressView[] }> = ({ progress 
   );
 };
 
+const UserActivityCard: React.FC<{ worker: FieldWorkerStats; rank: number; maxEvents: number }> = ({ worker, rank, maxEvents }) => {
+  const rankColors: Record<number, string> = {
+    1: "#F0A500", // Gold
+    2: "#9CA3AF", // Silver
+    3: "#CD7F32", // Bronze
+  };
+  const rankColor = rankColors[rank] || "#E5E7EB";
+  const progressWidth = maxEvents > 0 ? (worker.total_events / maxEvents) * 100 : 0;
+
+  return (
+    <div className="group relative bg-white p-4 rounded-[16px] border border-gray-100 hover:shadow-md transition-all">
+      <div className="flex items-center gap-4 mb-3">
+        <div
+          className="flex-none w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-black text-white"
+          style={{ backgroundColor: rankColor }}
+        >
+          {rank}
+        </div>
+        <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-100 border border-gray-50">
+          {worker.avatar_url ? (
+            <img src={worker.avatar_url} alt={worker.full_name} className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-[14px] font-bold text-gray-400">
+              {worker.full_name.split(" ").map(n => n[0]).join("")}
+            </div>
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <h4 className="text-[14px] font-bold text-gray-900 truncate">{worker.full_name}</h4>
+            <span className="px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded text-[10px] font-bold uppercase tracking-tight">
+              {worker.role.replace("_", " ")}
+            </span>
+          </div>
+          <p className="text-[12px] text-[#9CA3AF] mt-0.5">
+            {worker.catches} catches · {worker.vaccinations} vaccinations · {worker.releases} releases
+          </p>
+        </div>
+        <div className="text-right flex-none">
+          <p className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-tighter">
+            Active {formatDistanceToNow(new Date(worker.last_active))} ago
+          </p>
+        </div>
+      </div>
+      <div className="w-full h-1 bg-gray-50 rounded-full overflow-hidden">
+        <div
+          className="h-full bg-[#0D7377] rounded-full transition-all duration-1000"
+          style={{ width: `${progressWidth}%` }}
+        />
+      </div>
+    </div>
+  );
+};
+
 const DashboardPage: React.FC = () => {
+  const { profile } = useAuth();
   const [range, setRange] = useState<'7d' | '30d' | 'all'>('30d');
   const navigate = useNavigate();
 
@@ -139,11 +196,21 @@ const DashboardPage: React.FC = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('events')
-        .select('*, dogs(cover_image_url, programme_type)')
+        .select('*, dogs(cover_image_url, programme_type), handler:user_profiles(full_name, avatar_url, role)')
         .order('timestamp', { ascending: false })
         .limit(10);
       if (error) throw error;
-      return data as unknown as RecentActivityEvent[];
+      return data as unknown as RecentActivityEventWithHandler[];
+    },
+    refetchInterval: 30000,
+  });
+
+  const { data: fieldWorkerStats } = useQuery({
+    queryKey: ["field_worker_stats", sinceISO],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_field_worker_stats", { since: sinceISO });
+      if (error) throw error;
+      return data as FieldWorkerStats[];
     },
     refetchInterval: 30000,
   });
@@ -199,65 +266,66 @@ const DashboardPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-surface p-4 md:p-8 pt-safe pb-24">
-      <div className="max-w-7xl mx-auto">
-        <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+    <div className="min-h-screen bg-[#F8FAFC] pb-24">
+      {/* Header Section */}
+      <div className="bg-white border-b border-gray-100 sticky top-0 z-30">
+        <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
           <div>
-            <h1 className="text-[20px] md:text-[24px] font-extrabold text-gray-900">Programme Dashboard</h1>
-            <p className="text-[14px] text-gray-500 mt-1">Real-time status of CNVR & Vaccination programmes</p>
+            <h1 className="text-[24px] font-black text-gray-900 tracking-tight">Operations Center</h1>
+            <p className="text-[13px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">PawPrint AI • Kathmandu Valley</p>
           </div>
-
           <div className="flex items-center gap-3">
-            <div className="flex items-center bg-white rounded-[12px] p-1 shadow-sm border border-gray-100">
-              {(['7d', '30d', 'all'] as const).map((r) => (
+             <div className="hidden md:flex bg-gray-50 p-1 rounded-[14px] border border-gray-100">
+              {(['7d', '30d', 'all'] as const).map((t) => (
                 <button
-                  key={r}
-                  onClick={() => setRange(r)}
-                  className={`px-4 py-1.5 rounded-[10px] text-[13px] font-bold transition-all ${
-                    range === r ? 'bg-[#0D7377] text-white' : 'text-gray-500 hover:text-gray-900'
+                  key={t}
+                  onClick={() => setRange(t)}
+                  className={`px-4 py-2 rounded-[11px] text-[12px] font-bold transition-all ${
+                    range === t ? 'bg-white text-[#0D7377] shadow-sm' : 'text-gray-400 hover:text-gray-600'
                   }`}
                 >
-                  {r.toUpperCase()}
+                  {t.toUpperCase()}
                 </button>
               ))}
             </div>
             <button
               onClick={handleExport}
-              className="p-2.5 bg-white rounded-[12px] border border-gray-100 shadow-sm text-gray-600 hover:text-gray-900 transition-colors"
-              title="Export Report"
+              className="p-2.5 bg-[#0D7377] text-white rounded-[14px] hover:bg-[#095a5d] transition-all shadow-md active:scale-95"
             >
               <Download size={20} />
             </button>
           </div>
-        </header>
+        </div>
+      </div>
 
-        {/* Top Summary Row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Core Stats Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <StatCard
-            label="Total Dogs"
+            label="Total Registered"
             value={stats?.total_registered || 0}
-            sublabel="Overall population"
+            sublabel="Dogs in database"
             color="#0D7377"
-            icon={Users}
+            icon={CheckCircle2}
           />
           <StatCard
-            label="In Clinic"
+            label="Active Cases"
             value={stats?.currently_in_clinic || 0}
-            sublabel="Active medical care"
-            color="#F59E0B"
+            sublabel="Currently in clinic"
+            color="#F0A500"
             icon={Activity}
           />
           <StatCard
             label="Released"
             value={stats?.released_in_period || 0}
-            sublabel={`Completed in ${range}`}
+            sublabel="Released this period"
             color="#10B981"
             icon={CheckCircle2}
           />
           <StatCard
-            label="Critical"
+            label="Urgent"
             value={stats?.needs_attention || 0}
-            sublabel="Require urgent action"
+            sublabel="Health critical"
             color="#EF4444"
             icon={AlertCircle}
           />
@@ -265,127 +333,43 @@ const DashboardPage: React.FC = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
+            <CNVRPipeline progress={pipeline || []} />
 
-            {/* CNVR Programme Section */}
-            <section className="space-y-4">
-              <div className="flex items-center gap-2 border-l-[4px] border-[#0D7377] pl-3">
-                <h2 className="text-[16px] font-bold text-[#0D7377]">🔬 CNVR Programme</h2>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-white p-6 rounded-[16px] border border-gray-100 shadow-sm">
-                  <p className="text-[12px] font-bold text-gray-400 uppercase">Total CNVR</p>
-                  <p className="text-[28px] font-black text-[#0D7377] mt-1">{stats?.cnvr_total || 0}</p>
-                </div>
-                <div className="bg-white p-6 rounded-[16px] border border-gray-100 shadow-sm">
-                  <p className="text-[12px] font-bold text-gray-400 uppercase">Caught (Period)</p>
-                  <p className="text-[28px] font-black text-[#F59E0B] mt-1">{stats?.cnvr_caught_period || 0}</p>
-                </div>
-                <div className="bg-white p-6 rounded-[16px] border border-gray-100 shadow-sm">
-                  <p className="text-[12px] font-bold text-gray-400 uppercase">Released (Period)</p>
-                  <p className="text-[28px] font-black text-[#10B981] mt-1">{stats?.cnvr_released_period || 0}</p>
-                </div>
-              </div>
-
-              <CNVRPipeline progress={pipeline || []} />
-            </section>
-
-            {/* Vaccination Programme Section */}
-            <section className="space-y-4">
-              <div className="flex items-center gap-2 border-l-[4px] border-[#F0A500] pl-3">
-                <h2 className="text-[16px] font-bold text-[#92400E]">💉 Vaccination Programme</h2>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-white p-6 rounded-[16px] border border-gray-100 shadow-sm">
-                  <p className="text-[12px] font-bold text-gray-400 uppercase">Total Vaccinated</p>
-                  <p className="text-[28px] font-black text-[#F0A500] mt-1">{stats?.vacc_total || 0}</p>
-                </div>
-                <div className="bg-white p-6 rounded-[16px] border border-gray-100 shadow-sm">
-                  <p className="text-[12px] font-bold text-gray-400 uppercase">New (Period)</p>
-                  <p className="text-[28px] font-black text-[#F0A500] mt-1">{stats?.vacc_in_period || 0}</p>
-                </div>
-                <div className="bg-white p-6 rounded-[16px] border border-gray-100 shadow-sm">
-                  <p className="text-[12px] font-bold text-gray-400 uppercase">Rabies Total</p>
-                  <p className="text-[28px] font-black text-[#F0A500] mt-1">{stats?.vacc_rabies_period || 0}</p>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-[16px] p-6 border border-gray-100 shadow-sm">
-                <h3 className="text-[14px] font-bold text-gray-700 mb-4">Vaccine Type Breakdown (Period)</h3>
-                <div className="space-y-4">
-                  {[
-                    { label: 'Rabies', count: stats?.vacc_rabies_period || 0, color: '#F0A500' },
-                    { label: 'Distemper', count: stats?.vacc_distemper_period || 0, color: '#3B82F6' },
-                    { label: 'Combo', count: stats?.vacc_combo_period || 0, color: '#8B5CF6' },
-                    { label: 'Booster', count: stats?.vacc_booster_period || 0, color: '#10B981' }
-                  ].map(v => (
-                    <div key={v.label} className="space-y-1">
-                      <div className="flex justify-between text-[11px] font-bold uppercase tracking-wider text-gray-500">
-                        <span>{v.label}</span>
-                        <span>{v.count} dogs</span>
-                      </div>
-                      <div className="h-2 w-full bg-gray-50 rounded-full overflow-hidden">
-                        <div
-                          className="h-full rounded-full transition-all duration-1000"
-                          style={{
-                            width: `${(v.count / (stats?.vacc_in_period || 1)) * 100}%`,
-                            backgroundColor: v.color
-                          }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </section>
-
-            {/* Booster Alert Panel */}
-            <section className="bg-white rounded-[16px] border border-gray-100 shadow-sm overflow-hidden">
-              <div className="p-5 border-b border-gray-50 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-[15px] font-bold text-gray-900">🔄 Upcoming Boosters</h3>
-                  {stats?.vacc_boosters_due ? (
-                    <span className="px-2 py-0.5 bg-red-100 text-red-600 text-[11px] font-black rounded-full animate-pulse">
-                      {stats.vacc_boosters_due} DUE
-                    </span>
-                  ) : null}
-                </div>
-                {boosters && boosters.length > 5 && (
-                  <Link to="/dogs?filter=boosters" className="text-[13px] font-bold text-[#0D7377] hover:underline">
-                    View all {stats?.vacc_boosters_due} →
-                  </Link>
-                )}
+            {/* Vaccination Boosters */}
+            <section className="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden">
+              <div className="p-6 border-b border-gray-50 flex items-center justify-between">
+                <h3 className="text-[16px] font-bold text-gray-900 flex items-center gap-2">
+                  <Activity size={18} className="text-[#F0A500]" />
+                  Booster Reminders
+                </h3>
+                <span className="px-2.5 py-1 bg-amber-50 text-[#92400E] rounded-full text-[11px] font-black uppercase tracking-tight">
+                  {boosters?.length || 0} Due Soon
+                </span>
               </div>
 
               <div className="p-2">
                 {boosters && boosters.length > 0 ? (
-                  <div className="divide-y divide-gray-50">
-                    {boosters.slice(0, 5).map((dog) => {
-                      const typedDog = dog as { id: string; cover_image_url?: string; next_vaccination_due?: string };
-                      const dueStr = typedDog.next_vaccination_due;
-                      if (!dueStr) return null;
-                      const due = new Date(dueStr);
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {boosters.map((dog) => {
+                      const typedDog = dog as any;
+                      const due = new Date(typedDog.next_vaccination_due);
                       const diff = differenceInDays(due, new Date());
                       const isOverdue = isBefore(due, new Date());
-
-                      let dateColor = '#374151';
-                      if (isOverdue) dateColor = '#DC2626';
-                      else if (diff < 7) dateColor = '#D97706';
+                      const dateColor = isOverdue ? '#DC2626' : diff <= 7 ? '#D97706' : '#0D7377';
 
                       return (
                         <div
                           key={typedDog.id}
-                          onClick={() => navigate(`/dog/${typedDog.id}`)}
-                          className="flex items-center gap-4 p-3 hover:bg-gray-50 transition-colors cursor-pointer rounded-[12px]"
+                          onClick={() => navigate(`/dogs/${typedDog.id}`)}
+                          className="flex items-center gap-3 p-3 rounded-[18px] hover:bg-gray-50 transition-colors cursor-pointer border border-transparent hover:border-gray-100"
                         >
-                          <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-100 border border-gray-100 flex-none">
+                          <div className="w-12 h-12 rounded-[14px] overflow-hidden bg-gray-100 flex-none relative">
                             {typedDog.cover_image_url ? (
-                              <img src={typedDog.cover_image_url} alt="" className="w-full h-full object-cover" />
+                              <img src={typedDog.cover_image_url} className="w-full h-full object-cover" alt="" />
                             ) : (
-                              <div className="w-full h-full flex items-center justify-center text-gray-300">
-                                <Users size={16} />
-                              </div>
+                              <div className="w-full h-full flex items-center justify-center text-gray-400">
+                               <Activity size={16} />
+                             </div>
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
@@ -423,45 +407,48 @@ const DashboardPage: React.FC = () => {
               </div>
             </section>
 
-            {/* Field Performance */}
-            <div className="bg-white rounded-[16px] p-6 border border-gray-100 shadow-sm">
-               <h3 className="text-[16px] font-bold text-gray-900 mb-6 flex items-center gap-2">
-                <Users size={18} className="text-[#0D7377]" />
-                Field Performance
-              </h3>
-
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-[13px]">
-                  <thead>
-                    <tr className="text-gray-400 font-bold uppercase tracking-tight border-b border-gray-50">
-                      <th className="pb-3">Worker</th>
-                      <th className="pb-3 text-center">CNVR Catches</th>
-                      <th className="pb-3 text-center">Vaccinations</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {[
-                      { name: 'Arjun K.', cnvr: stats?.cnvr_caught_period || 0, vacc: Math.floor((stats?.vacc_in_period || 0) * 0.8) },
-                      { name: 'Sita R.', cnvr: Math.floor((stats?.cnvr_caught_period || 0) * 0.7), vacc: stats?.vacc_in_period || 0 },
-                      { name: 'Pramod M.', cnvr: Math.floor((stats?.cnvr_caught_period || 0) * 0.4), vacc: Math.floor((stats?.vacc_in_period || 0) * 0.5) }
-                    ].map((worker) => (
-                      <tr key={worker.name} className="group">
-                        <td className="py-4 font-bold text-gray-900">{worker.name}</td>
-                        <td className="py-4 text-center">
-                          <span className="px-2 py-1 bg-[#0D737710] text-[#0D7377] rounded-md font-black">
-                            {worker.cnvr}
-                          </span>
-                        </td>
-                        <td className="py-4 text-center">
-                          <span className="px-2 py-1 bg-[#F0A50010] text-[#92400E] rounded-md font-black">
-                            {worker.vacc}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            {/* Team Activity Section */}
+            <div className="bg-white rounded-[20px] p-6 border border-gray-100 shadow-sm">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-[16px] font-bold text-gray-900 flex items-center gap-2">
+                  <Users size={18} className="text-[#0D7377]" />
+                  Team Activity
+                </h3>
+                <div className="px-3 py-1 bg-gray-50 rounded-full border border-gray-100">
+                  <span className="text-[11px] font-bold text-[#9CA3AF] uppercase tracking-wider">
+                    {range === "7d" ? "Past 7 Days" : range === "30d" ? "Past 30 Days" : "All Time"}
+                  </span>
+                </div>
               </div>
+
+              <div className="space-y-3">
+                {fieldWorkerStats ? (
+                  <>
+                    {fieldWorkerStats.slice(0, 5).sort((a, b) => b.total_events - a.total_events).map((worker, index) => (
+                      <UserActivityCard
+                        key={worker.user_id}
+                        worker={worker}
+                        rank={index + 1}
+                        maxEvents={Math.max(...fieldWorkerStats.map(u => u.total_events), 0)}
+                      />
+                    ))}
+                  </>
+                ) : (
+                  <div className="py-12 flex flex-col items-center justify-center gap-3 opacity-20">
+                    <Users size={48} />
+                    <p className="text-[14px] font-bold">No activity recorded yet</p>
+                  </div>
+                )}
+              </div>
+
+              {(profile?.role === "admin" || profile?.role === "programme_manager") && (
+                <Link
+                  to="/admin"
+                  className="mt-6 flex items-center justify-center gap-1.5 w-full py-3 rounded-[12px] bg-gray-50 text-[13px] font-bold text-gray-500 hover:bg-gray-100 transition-colors"
+                >
+                  View all team <ChevronRight size={14} />
+                </Link>
+              )}
             </div>
           </div>
 
@@ -520,7 +507,7 @@ const DashboardPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Recent Activity */}
+            {/* Recent Activity Feed */}
             <div className="bg-white rounded-[16px] p-6 border border-gray-100 shadow-sm">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-[16px] font-bold text-gray-900 flex items-center gap-2">
@@ -557,14 +544,30 @@ const DashboardPage: React.FC = () => {
                           {formatDistanceToNow(new Date(event.timestamp))} ago
                         </p>
                       </div>
-                      <div className="mt-1 flex items-center gap-2">
-                        <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-tight border ${
-                          event.event_type === 'on_site_vaccinate'
-                            ? 'bg-amber-50 text-amber-600 border-amber-200'
-                            : 'bg-gray-50 text-[#0D7377] border-[#0D737710]'
-                        }`}>
-                          {event.event_type === 'on_site_vaccinate' ? '💉 On-site vaccination' : event.event_type}
-                        </span>
+                      <div className="mt-1 flex flex-col gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-tight border ${
+                            event.event_type === 'on_site_vaccinate'
+                              ? 'bg-amber-50 text-amber-600 border-amber-200'
+                              : 'bg-gray-50 text-[#0D7377] border-[#0D737710]'
+                          }`}>
+                            {event.event_type === 'on_site_vaccinate' ? '💉 On-site vaccination' : event.event_type}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-5 h-5 rounded-full overflow-hidden bg-gray-100 border border-gray-50 flex-none">
+                            {event.handler?.avatar_url ? (
+                              <img src={event.handler.avatar_url} className="w-full h-full object-cover" alt="" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-[9px] font-bold text-gray-400">
+                                {(event.handler?.full_name || event.handler_name || 'U').split(' ').map(n => n[0]).join('')}
+                              </div>
+                            )}
+                          </div>
+                          <span className="text-[11px] font-bold text-gray-500">
+                            by {event.handler?.full_name || event.handler_name || 'Unknown'}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
