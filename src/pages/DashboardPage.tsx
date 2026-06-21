@@ -497,7 +497,7 @@ const DashboardPage: React.FC = () => {
               </div>
               <div className="p-4 bg-gray-50 flex items-center justify-center gap-6">
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-[#0D7377] />
+                  <div className="w-3 h-3 rounded-full bg-[#0D7377]" />
                   <span className="text-[11px] font-bold text-gray-500 uppercase">CNVR</span>
                 </div>
                 <div className="flex items-center gap-2">
