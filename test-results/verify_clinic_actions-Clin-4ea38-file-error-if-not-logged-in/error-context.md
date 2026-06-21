@@ -6,8 +6,8 @@
 
 # Test info
 
-- Name: verify_pwa.spec.ts >> PWA Features >> should show network status when offline
-- Location: verify_pwa.spec.ts:13:3
+- Name: verify_clinic_actions.spec.ts >> Clinic Actions Panel >> should show profile error if not logged in
+- Location: verify_clinic_actions.spec.ts:4:3
 
 # Error details
 

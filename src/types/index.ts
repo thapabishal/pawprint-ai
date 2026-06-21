@@ -75,11 +75,6 @@ export interface DogEvent {
   handler_name: string | null;
   notes: string | null;
   confirmed_match: boolean;
-  is_edited?: boolean;
-  edited_at?: string | null;
-  edited_by?: string | null;
-  edit_reason?: string | null;
-  editor_profile?: { full_name: string } | null;
   vaccine_type?: VaccineType | null;
   vaccine_batch?: string | null;
   vaccinator_name?: string | null;

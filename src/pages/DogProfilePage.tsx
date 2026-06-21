@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Activity,
@@ -13,7 +13,7 @@ import {
   Info,
   XCircle,
   AlertTriangle,
-  Pencil
+  Edit2,
 } from 'lucide-react';
 import { formatDistanceToNow, format, differenceInDays, isBefore } from 'date-fns';
 import { motion } from 'framer-motion';
@@ -25,39 +25,22 @@ import { cn } from '@/lib/utils';
 import { StatusBadge } from '@/components/StatusBadge';
 import { ClinicActionsPanel } from '@/components/clinic/ClinicActionsPanel';
 import { EventLogger } from '@/components/clinic/EventLogger';
-import { EditEventSheet } from '@/components/clinic/EditEventSheet';
-import type { DogEvent, EventType, UserProfile } from '@/types';
+import { DogEvent, EventType } from '@/types';
 
 const DogProfilePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { profile } = useAuth();
   const { data: dog, isLoading, error, refetch } = useDog(id);
-  const [isExpanded, setIsExpanded] = useState<Record<string, boolean>>({});
-  const [showEditDetails, setShowEditDetails] = useState<Record<string, boolean>>({});
-
   const [activeAction, setActiveAction] = useState<EventType | null>(null);
   const [isLoggerOpen, setIsLoggerOpen] = useState(false);
-  const [isExpanded, setIsExpanded] = useState<Record<string, boolean>>({});
-
-  const [eventToEdit, setEventToEdit] = useState<DogEvent | null>(null);
-  const [isEditSheetOpen, setIsEditSheetOpen] = useState(false);
-
-  const now = useMemo(() => new Date(), []);
+  const [expandedNotes, setExpandedNotes] = useState<Record<string, boolean>>({});
 
   if (isLoading) return <ProfileSkeleton />;
   if (error || !dog) return <ProfileError error={error} />;
 
-  const daysInSystem = Math.floor(
-    (now.getTime() - new Date(dog.created_at).getTime()) / (1000 * 60 * 60 * 24)
-  );
-
   const toggleNotes = (eventId: string) => {
-    setIsExpanded(prev => ({ ...prev, [eventId]: !prev[eventId] }));
-  };
-
-  const toggleEditDetails = (eventId: string) => {
-    setShowEditDetails(prev => ({ ...prev, [eventId]: !prev[eventId] }));
+    setExpandedNotes(prev => ({ ...prev, [eventId]: !prev[eventId] }));
   };
 
   const handleAction = (type: EventType) => {
@@ -65,15 +48,11 @@ const DogProfilePage: React.FC = () => {
     setIsLoggerOpen(true);
   };
 
-  const handleEdit = (event: DogEvent) => {
-    setEventToEdit(event);
-    setIsEditSheetOpen(true);
-  };
+  const daysInSystem = differenceInDays(new Date(), new Date(dog.created_at));
 
-  // Determine if booster is due
-  const isBoosterDue = dog.next_vaccination_due
-    ? new Date(dog.next_vaccination_due).getTime() <= now.getTime() + (30 * 86400000)
-    : false;
+  // Determine if booster is due/overdue
+  const boosterDate = dog.next_vaccination_due ? new Date(dog.next_vaccination_due) : null;
+  const isBoosterDue = boosterDate ? isBefore(boosterDate, new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)) : false;
 
   return (
     <div className="min-h-screen bg-surface pb-24">
@@ -193,13 +172,8 @@ const DogProfilePage: React.FC = () => {
               <TimelineEvent
                 key={event.id}
                 event={event}
-                isExpanded={isExpanded[event.id]}
+                isExpanded={!!expandedNotes[event.id]}
                 onToggle={() => toggleNotes(event.id)}
-                onEdit={() => handleEdit(event)}
-                currentUser={profile}
-                showEditDetails={showEditDetails[event.id]}
-                onToggleEditDetails={() => toggleEditDetails(event.id)}
-                now={now}
               />
             ))}
           </div>
@@ -216,19 +190,12 @@ const DogProfilePage: React.FC = () => {
           catchPhotoUrl={dog.cover_image_url}
         />
       )}
-
-      <EditEventSheet
-        isOpen={isEditSheetOpen}
-        onOpenChange={setIsEditSheetOpen}
-        event={eventToEdit}
-        onSuccess={() => refetch()}
-      />
     </div>
   );
 };
 
 // Sub-components
-const StatPill = ({ icon, label, value, valueClass }: { icon: React.ReactNode, label: string, value: string, valueClass?: string }) => (
+const StatPill = ({ icon, label, value, valueClass }: any) => (
   <div className="flex flex-1 flex-col items-center rounded-[10px] border border-border bg-[#F9FAFB] py-2.5 px-2 text-center">
     <div className="mb-1 text-muted opacity-60">{icon}</div>
     <span className={cn("text-[14px] font-bold leading-tight", valueClass || "text-dark")}>{value}</span>
@@ -236,7 +203,7 @@ const StatPill = ({ icon, label, value, valueClass }: { icon: React.ReactNode, l
   </div>
 );
 
-const TraitRow = ({ label, value, swatch }: { label: string, value?: string, swatch?: string }) => (
+const TraitRow = ({ label, value, swatch }: any) => (
   <div className="flex items-center justify-between">
     <span className="text-[13px] text-muted">{label}</span>
     <div className="flex items-center gap-2">
@@ -248,26 +215,8 @@ const TraitRow = ({ label, value, swatch }: { label: string, value?: string, swa
   </div>
 );
 
-const TimelineEvent = ({
-  event,
-  isExpanded,
-  onToggle,
-  onEdit,
-  currentUser,
-  showEditDetails,
-  onToggleEditDetails,
-  now
-}: {
-  event: DogEvent,
-  isExpanded: boolean,
-  onToggle: () => void,
-  onEdit: () => void,
-  currentUser: UserProfile | null,
-  showEditDetails: boolean,
-  onToggleEditDetails: () => void,
-  now: Date
-}) => {
-  const configMap: Record<string, { icon: React.ElementType, color: string, label: string }> = {
+const TimelineEvent = ({ event, isExpanded, onToggle }: { event: DogEvent, isExpanded: boolean, onToggle: () => void }) => {
+  const configMap: Record<string, { icon: any, color: string, label: string }> = {
     catch: { icon: Activity, color: '#F59E0B', label: 'Caught' },
     vaccinate: { icon: Syringe, color: '#06B6D4', label: 'Vaccinated' },
     sterilize: { icon: Scissors, color: '#EC4899', label: 'Sterilized' },
@@ -282,11 +231,6 @@ const TimelineEvent = ({
 
   const config = configMap[event.event_type] || configMap.catch;
 
-  const isWithin24h = new Date(event.timestamp).getTime() > now.getTime() - 24 * 60 * 60 * 1000;
-  const isAdmin = currentUser?.role === 'admin';
-  const isOriginalHandler = currentUser?.id === event.handler_id;
-  const canEdit = isAdmin || (isOriginalHandler && isWithin24h);
-
   return (
     <div className="relative pl-7">
       {/* Dot */}
@@ -297,50 +241,18 @@ const TimelineEvent = ({
 
       <div className="rounded-[12px] border border-border bg-white p-3.5 shadow-sm transition-shadow hover:shadow-md" style={{ borderLeft: `3px solid ${config.color}` }}>
         <div className="flex items-start justify-between">
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-1.5">
-              <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: config.color }}>{config.label}</span>
-              {event.outcome && event.outcome !== 'completed' && (
-                 <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500 uppercase">
-                   {event.outcome.replace('_', ' ')}
-                 </span>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] font-medium text-[#9CA3AF]">
-                {formatDistanceToNow(new Date(event.timestamp))} ago
-              </span>
-              {event.is_edited && (
-                <button
-                  onClick={onToggleEditDetails}
-                  className="rounded-full bg-[#F3F4F6] px-2 py-0.5 text-[10px] font-bold text-[#9CA3AF] uppercase transition-colors hover:bg-slate-200"
-                >
-                  edited
-                </button>
-              )}
-            </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: config.color }}>{config.label}</span>
+            {event.outcome && event.outcome !== 'completed' && (
+               <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500 uppercase">
+                 {event.outcome.replace('_', ' ')}
+               </span>
+            )}
           </div>
-
-          {canEdit && (
-            <button
-              onClick={onEdit}
-              className="flex h-7 w-7 items-center justify-center rounded-full text-[#9CA3AF] transition-colors hover:bg-slate-100 active:scale-90"
-            >
-              <Pencil size={16} />
-            </button>
-          )}
+          <span className="text-[11px] font-medium text-[#9CA3AF]">
+            {formatDistanceToNow(new Date(event.timestamp))} ago
+          </span>
         </div>
-
-        {showEditDetails && event.is_edited && (
-          <div className="mt-2 space-y-1 rounded-lg bg-slate-50 p-2.5 border border-dashed border-slate-200">
-            <p className="text-[11px] italic text-[#9CA3AF]">
-              Edited {event.edited_at ? formatDistanceToNow(new Date(event.edited_at)) : 'some time'} ago by {event.editor_profile?.full_name || 'System'}
-            </p>
-            <p className="text-[11px] text-[#9CA3AF]">
-              <span className="font-bold">Reason:</span> {event.edit_reason}
-            </p>
-          </div>
-        )}
 
         <div className="mt-1 text-[13px] font-bold text-slate-700">
           {format(new Date(event.timestamp), 'MMM d, yyyy • h:mm a')}
@@ -427,7 +339,7 @@ const ProfileSkeleton = () => (
   </div>
 );
 
-const ProfileError = ({ error }: { error: any }) => (
+const ProfileError = ({ error }: any) => (
   <div className="flex h-screen flex-col items-center justify-center p-6 text-center">
     <div className="mb-4 rounded-full bg-red-50 p-6 text-red-500">
         <Info size={48} />

@@ -174,7 +174,7 @@ const DashboardPage: React.FC = () => {
   const { data: stats } = useQuery({
     queryKey: ['dashboard_stats', range],
     queryFn: async () => {
-      const { data, error } = await (supabase.rpc as unknown as (name: string, args: unknown) => Promise<{ data: DashboardStats[]; error: unknown }>)('get_dashboard_stats', { since: sinceISO });
+      const { data, error } = await (supabase.rpc as any)('get_dashboard_stats', { since: sinceISO });
       if (error) throw error;
       return data[0] as DashboardStats;
     },
@@ -497,7 +497,7 @@ const DashboardPage: React.FC = () => {
               </div>
               <div className="p-4 bg-gray-50 flex items-center justify-center gap-6">
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-[#0D7377]" />
+                  <div className="w-3 h-3 rounded-full bg-[#0D7377] />
                   <span className="text-[11px] font-bold text-gray-500 uppercase">CNVR</span>
                 </div>
                 <div className="flex items-center gap-2">
