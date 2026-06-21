@@ -1,21 +1,21 @@
 import { useState, useCallback } from 'react';
-import { supabase } from '../lib/supabase';
-import { GPS_SEARCH_RADIUS_KM, GPS_SEARCH_RADIUS_EXPANDED_KM } from '../lib/constants';
-import type {
-  GeoPoint,
-  MatchResult,
+import { supabase } from '@/lib/supabase';
+import {
   DogWithStatus,
+  MatchResult,
+  GeoPoint,
   Sex,
   AgeGroup,
   Condition,
   SterilizationStatus,
   VisualTags,
-  EventType,
-  DogEvent,
   ProgrammeType,
-  VaccineType
-} from '../types';
-import type { Database } from '../lib/database.types';
+  EventType,
+  VaccineType,
+  DogEvent
+} from '@/types';
+import { GPS_SEARCH_RADIUS_KM, GPS_SEARCH_RADIUS_EXPANDED_KM } from '@/lib/constants';
+import { Database } from '@/lib/database.types';
 
 type RawNearbyCatch = Database['public']['Functions']['find_nearby_catches']['Returns'][number];
 type RawDogRow = Database['public']['Tables']['dogs']['Row'];
@@ -63,7 +63,7 @@ export const useIdentify = () => {
       }
 
       if (finalData) {
-        const mappedResults: MatchResult[] = finalData.map((item) => {
+        const mappedResults: MatchResult[] = (finalData as any[]).map((item) => {
           const gps_score = Math.max(0, Math.min(1, 1 - (item.distance_metres / radius)));
           const tag_overlap = 0; // V2: collect clinic dog tags before search
           const composite_score = gps_score * 0.7 + tag_overlap * 0.3;
@@ -74,6 +74,7 @@ export const useIdentify = () => {
             event_type: 'catch',
             location: null,
             location_accuracy: item.location_accuracy,
+            handler_id: null,
             handler_name: item.handler_name,
             notes: item.notes,
             confirmed_match: true,
@@ -166,10 +167,11 @@ export const useIdentify = () => {
           last_updated: sortedEvents[0]?.timestamp || rawDog.updated_at,
           catch_location: null,
           images: [],
-          events: (rawDog.events || []).map((e) => ({
+          events: (rawDog.events || []).map((e: any) => ({
             ...e,
             event_type: e.event_type as EventType,
             location: null,
+            handler_id: e.handler_id,
             vaccine_type: e.vaccine_type as VaccineType | null
           }))
         };
@@ -242,10 +244,11 @@ export const useIdentify = () => {
             last_updated: sortedEvents[0]?.timestamp || item.updated_at,
             catch_location: null,
             images: [],
-            events: (item.events || []).map(e => ({
+            events: (item.events || []).map((e: any) => ({
               ...e,
               event_type: e.event_type as EventType,
               location: null,
+              handler_id: e.handler_id,
               vaccine_type: e.vaccine_type as VaccineType | null
             }))
           };
