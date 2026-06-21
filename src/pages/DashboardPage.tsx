@@ -20,7 +20,7 @@ import { MapContainer, TileLayer, CircleMarker } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import {
   DashboardStats,
-  RecentActivityEvent, RecentActivityEventWithHandler,
+  RecentActivityEventWithHandler,
   FieldWorkerStats,
   DogCNVRProgressView,
   ProgrammeType
@@ -128,7 +128,7 @@ const UserActivityCard: React.FC<{ worker: FieldWorkerStats; rank: number; maxEv
             <img src={worker.avatar_url} alt={worker.full_name} className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-[14px] font-bold text-gray-400">
-              {worker.full_name.split(" ").map(n => n[0]).join("")}
+              {worker.full_name.split(" ").map((n: string) => n[0]).join("")}
             </div>
           )}
         </div>
@@ -208,7 +208,7 @@ const DashboardPage: React.FC = () => {
   const { data: fieldWorkerStats } = useQuery({
     queryKey: ["field_worker_stats", sinceISO],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_field_worker_stats", { since: sinceISO });
+      const { data, error } = await (supabase.rpc as any)("get_field_worker_stats", { since: sinceISO });
       if (error) throw error;
       return data as FieldWorkerStats[];
     },
@@ -352,7 +352,7 @@ const DashboardPage: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     {boosters.map((dog) => {
                       const typedDog = dog as any;
-                      const due = new Date(typedDog.next_vaccination_due);
+                      const due = new Date(typedDog.next_vaccination_due || 0);
                       const diff = differenceInDays(due, new Date());
                       const isOverdue = isBefore(due, new Date());
                       const dateColor = isOverdue ? '#DC2626' : diff <= 7 ? '#D97706' : '#0D7377';
@@ -560,7 +560,7 @@ const DashboardPage: React.FC = () => {
                               <img src={event.handler.avatar_url} className="w-full h-full object-cover" alt="" />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center text-[9px] font-bold text-gray-400">
-                                {(event.handler?.full_name || event.handler_name || 'U').split(' ').map(n => n[0]).join('')}
+                                {(event.handler?.full_name || event.handler_name || 'U').split(' ').map((n: string) => n[0]).join('')}
                               </div>
                             )}
                           </div>

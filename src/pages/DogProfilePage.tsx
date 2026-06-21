@@ -14,19 +14,17 @@ import {
   XCircle,
   AlertTriangle,
   Edit2,
-  Calendar,
-  AlertCircle
 } from 'lucide-react';
 import { formatDistanceToNow, format, differenceInDays, isBefore } from 'date-fns';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useDog } from '@/hooks/useDog';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import StatusBadge from '@/components/StatusBadge';
-import ClinicActionsPanel from '@/components/clinic/ClinicActionsPanel';
-import EventLogger from '@/components/clinic/EventLogger';
+import { StatusBadge } from '@/components/StatusBadge';
+import { ClinicActionsPanel } from '@/components/clinic/ClinicActionsPanel';
+import { EventLogger } from '@/components/clinic/EventLogger';
 import { DogEvent, EventType } from '@/types';
 
 const DogProfilePage: React.FC = () => {
@@ -266,7 +264,7 @@ const TimelineEvent = ({ event, isExpanded, onToggle }: { event: DogEvent, isExp
               <img src={event.handler.avatar_url} className="w-full h-full object-cover" alt="" />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-[10px] font-bold text-gray-400">
-                {(event.handler?.full_name || event.handler_name || 'U').split(' ').map(n => n[0]).join('')}
+                {(event.handler?.full_name || event.handler_name || 'U').split(' ').map((n: string) => n[0]).join('')}
               </div>
             )}
           </div>

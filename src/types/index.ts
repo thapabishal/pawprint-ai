@@ -238,5 +238,13 @@ export interface FieldWorkerStats {
   vaccinations: number;
   releases: number;
   total_events: number;
-  last_active: string | null;
+  last_active: string;
+}
+
+export interface RecentActivityEventWithHandler extends RecentActivityEvent {
+  handler?: {
+    full_name: string;
+    avatar_url: string | null;
+    role: UserRole;
+  } | null;
 }
