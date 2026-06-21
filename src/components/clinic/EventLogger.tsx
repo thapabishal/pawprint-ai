@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Sheet,
   SheetContent,
@@ -49,6 +49,8 @@ export const EventLogger: React.FC<EventLoggerProps> = ({
   const [surgeonName, setSurgeonName] = useState(profile?.full_name || '');
 
   const { location, accuracy, requestLocation } = useGPS();
+
+  const now = useMemo(() => new Date(), []);
 
   useEffect(() => {
     if (eventType === 'vaccinate') {
@@ -118,7 +120,7 @@ export const EventLogger: React.FC<EventLoggerProps> = ({
     }
   };
 
-  const configMap: Record<string, { icon: any, color: string, bg: string, label: string }> = {
+  const configMap: Record<string, { icon: React.ElementType, color: string, bg: string, label: string }> = {
     vaccinate: { icon: Syringe, color: 'text-[#06B6D4]', bg: 'bg-[#ECFEFF]', label: 'Vaccinate' },
     sterilize: { icon: Scissors, color: 'text-[#8B5CF6]', bg: 'bg-[#F5F3FF]', label: 'Mark Neutered' },
     treat: { icon: HeartPulse, color: 'text-[#F59E0B]', bg: 'bg-[#FFFBEB]', label: 'Medical Treatment' },
@@ -189,7 +191,7 @@ export const EventLogger: React.FC<EventLoggerProps> = ({
                 </select>
                 {selectedScheduleId && (
                   <p className="mt-2 text-[12px] text-muted">
-                    Preview: Due on {new Date(Date.now() + (schedules.find(s => s.id === selectedScheduleId)?.first_booster_days || 0) * 86400000).toLocaleDateString()}
+                    Preview: Due on {new Date(now.getTime() + (schedules.find(s => s.id === selectedScheduleId)?.first_booster_days || 0) * 86400000).toLocaleDateString()}
                   </p>
                 )}
               </div>
